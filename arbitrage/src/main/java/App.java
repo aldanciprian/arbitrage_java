@@ -24,9 +24,10 @@ import org.knowm.xchange.service.trade.params.TradeHistoryParamsAll;
 public class App {
 	
 	public static List<String> exchangesNames = null;
-	public static List<CurrencyPair> tradable_pairs = null;
+	public static Map<String,List<CurrencyPair>> tradable_pairs = null;
 	public static Map<String,Exchange> exchanges = null;
-	
+	public static Map<String,List<CurrencyPair>> pairPerExchange = null;
+	public static Map<String,Map<CurrencyPair,Ticker>> all_tickers = null;
 	
 	public static void connectExchanges() {
 		for ( String s: exchangesNames)
@@ -55,7 +56,7 @@ public class App {
 		// TODO Auto-generated method stub
 
 		
-		tradable_pairs = new Vector<CurrencyPair>();
+		tradable_pairs = new HashMap<String,List<CurrencyPair>>();
 
 		
 		exchangesNames  =  new Vector<String>();
@@ -67,6 +68,7 @@ public class App {
 		
 		connectExchanges();
 		
+		all_tickers = new  HashMap<String,Map<CurrencyPair,Ticker>>();
 		
 		Map<String,List<CurrencyPair>> all_eth_symbols = new HashMap<String,List<CurrencyPair>>();
 		
@@ -79,11 +81,9 @@ public class App {
 			{
 				if ( cp.counter == Currency.ETH )
 				{
-					//System.out.println(cp);				
 					eth_symbols.add(cp);
 				}
 			}
-			//System.out.println();
 			all_eth_symbols.put(key, eth_symbols);
 		}
 		
@@ -92,55 +92,142 @@ public class App {
 		
 		for ( String key: exchangesNames ) 
 		{
-			System.out.println(key+" : ");
 			for ( String key2: exchangesNames )
 			{
 				if ( key != key2 )
 				{
-					System.out.println("\t"+key2);
-					System.out.print("\t");
+					List<CurrencyPair> common_symbols = new Vector<CurrencyPair>();
 					for ( CurrencyPair elem: all_eth_symbols.get(key) )
 					{
 						for ( CurrencyPair elem2: all_eth_symbols.get(key2) )
 						{
 							if ( elem.compareTo(elem2) == 0 )
 							{
-								System.out.print(elem.toString()+" ");
+								common_symbols.add(elem);
 								break;
 							}
 						}
 					}
-					System.out.println();					
+					if ( !tradable_pairs.containsKey(key+":"+key2) && !tradable_pairs.containsKey(key2+":"+key) )
+					{
+						tradable_pairs.put(key+":"+key2,common_symbols);
+					}
 				}
 			}
 
 		}
 
-		
-		for ( String key: exchangesNames )
+		pairPerExchange = new HashMap<String,List<CurrencyPair>>();
+		for (String key : tradable_pairs.keySet())
 		{
-			MarketDataService marketDataService = exchanges.get(key).getMarketDataService();
-
-				//System.out.println(exchanges.get(key).getAccountService().requestDepositAddress(Currency.EOS).toString());
-				TradeHistoryParamsAll thp = new TradeHistoryParamsAll();
+			String[] exchanges_keys = key.split(":");
+			for ( CurrencyPair cp : tradable_pairs.get(key))
+			{
+				if (pairPerExchange.containsKey(exchanges_keys[0])) {
+					List<CurrencyPair> temp_list_cp = new Vector<CurrencyPair>();
+					for (CurrencyPair cp2 : pairPerExchange.get(exchanges_keys[0])) {
+						System.out.println(" ---- " +cp2.toString());
+						temp_list_cp.add(cp2);
+					}
+					
+					boolean contains = false;
+					for (CurrencyPair cp2 : temp_list_cp) {
+						if (cp.compareTo(cp2) == 0) {
+							contains = true;
+							break;
+						}
+					}
+					if ( contains == false )
+					{
+						pairPerExchange.get(exchanges_keys[0]).add(cp);						
+					}
+				} else {
+					List<CurrencyPair> list_cp = new Vector<CurrencyPair>();
+					list_cp.add(cp);
+					pairPerExchange.put(exchanges_keys[0], list_cp);
+				}
+			}
 
 			
-
-			for ( CurrencyPair cp : tradable_pairs)
+			for ( CurrencyPair cp : tradable_pairs.get(key))
 			{
-				Ticker ticker=null;
-				try {
-					ticker = marketDataService.getTicker(cp);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if (pairPerExchange.containsKey(exchanges_keys[1])) {
+					List<CurrencyPair> temp_list_cp = new Vector<CurrencyPair>();
+					for (CurrencyPair cp2 : pairPerExchange.get(exchanges_keys[1])) {
+						temp_list_cp.add(cp2);
+					}
+					
+					boolean contains = false;
+					for (CurrencyPair cp2 : temp_list_cp) {
+						if (cp.compareTo(cp2) == 1) {
+							contains = true;
+							break;
+						}
+					}
+					if ( contains == false )
+					{
+						pairPerExchange.get(exchanges_keys[1]).add(cp);						
+					}
+				} else {
+					List<CurrencyPair> list_cp = new Vector<CurrencyPair>();
+					list_cp.add(cp);
+					pairPerExchange.put(exchanges_keys[1], list_cp);
 				}
-		
-				System.out.println(ticker.getCurrencyPair().toString()+" "+ticker.getLast());	
-			}
-				
+			}			
+			
+		}
+
+		all_tickers.clear();
+		List<Thread> workers = new Vector<Thread>();
+		for ( String key: exchangesNames )
+		{
+			System.out.print(key);
+			MyRunnable r = new MyRunnable(key);
+			Thread th = new Thread(r); 
+			workers.add(th);
+			
+			th.start();
 		}
 		
+		for ( Thread th : workers)
+		{
+			try {
+				th.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		for (String key : tradable_pairs.keySet())
+		{
+			String[] exchanges_keys = key.split(":");
+			for ( CurrencyPair cp : tradable_pairs.get(key))
+			{
+				System.out.println(key.toString());
+				System.out.print(cp.toString()+"  ");
+				try
+				{
+					if (all_tickers.get(exchanges_keys[0]).containsKey(cp)) 
+					{
+						System.out.print(exchanges_keys[0]+": ");					
+						Ticker tick = all_tickers.get(exchanges_keys[0]).get(cp);
+						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
+						System.out.print("  -  ");
+					}
+					if (all_tickers.get(exchanges_keys[1]).containsKey(cp)) 
+					{
+						System.out.print(exchanges_keys[1]+": ");					
+						Ticker tick = all_tickers.get(exchanges_keys[1]).get(cp);
+						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
+					}				
+				} catch (NullPointerException e)
+				{
+					System.out.println(e.getMessage());
+				}
+				System.out.println();
+			}
+		}
 		
 //		MarketDataService marketDataService = bitstamp.getMarketDataService();
 //
