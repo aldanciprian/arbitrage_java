@@ -10,7 +10,7 @@ import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.binance.BinanceExchange;
-import org.knowm.xchange.bitfinex.v1.BitfinexExchange;
+import org.knowm.xchange.bitfinex.v2.BitfinexExchange;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.account.FundingRecord;
@@ -126,7 +126,6 @@ public class App {
 				if (pairPerExchange.containsKey(exchanges_keys[0])) {
 					List<CurrencyPair> temp_list_cp = new Vector<CurrencyPair>();
 					for (CurrencyPair cp2 : pairPerExchange.get(exchanges_keys[0])) {
-						System.out.println(" ---- " +cp2.toString());
 						temp_list_cp.add(cp2);
 					}
 					
@@ -181,7 +180,6 @@ public class App {
 		List<Thread> workers = new Vector<Thread>();
 		for ( String key: exchangesNames )
 		{
-			System.out.print(key);
 			MyRunnable r = new MyRunnable(key);
 			Thread th = new Thread(r); 
 			workers.add(th);
