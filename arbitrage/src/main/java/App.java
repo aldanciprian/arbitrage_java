@@ -62,7 +62,7 @@ public class App {
 		exchangesNames  =  new Vector<String>();
 		exchangesNames.add("bitfinex");
 		exchangesNames.add("binance");
-		exchangesNames.add("poloniex");
+//		exchangesNames.add("poloniex");
 		
 		exchanges = new HashMap<String,Exchange>();
 		
@@ -141,6 +141,7 @@ public class App {
 						pairPerExchange.get(exchanges_keys[0]).add(cp);						
 					}
 				} else {
+					System.out.println(exchanges_keys[0]+"  adding to list");
 					List<CurrencyPair> list_cp = new Vector<CurrencyPair>();
 					list_cp.add(cp);
 					pairPerExchange.put(exchanges_keys[0], list_cp);
