@@ -62,7 +62,7 @@ public class App {
 		exchangesNames  =  new Vector<String>();
 		exchangesNames.add("bitfinex");
 		exchangesNames.add("binance");
-//		exchangesNames.add("poloniex");
+		exchangesNames.add("poloniex");
 		
 		exchanges = new HashMap<String,Exchange>();
 		
@@ -79,8 +79,9 @@ public class App {
 			
 			for (CurrencyPair cp : symbols)
 			{
-				if ( cp.counter == Currency.ETH )
+				if ( (cp.counter == Currency.ETH) || (cp.base == Currency.ETH) )
 				{
+//					System.out.println(key+" has "+ cp.toString());
 					eth_symbols.add(cp);
 				}
 			}
@@ -141,7 +142,7 @@ public class App {
 						pairPerExchange.get(exchanges_keys[0]).add(cp);						
 					}
 				} else {
-					System.out.println(exchanges_keys[0]+"  adding to list");
+//					System.out.println(exchanges_keys[0]+"  adding to list");
 					List<CurrencyPair> list_cp = new Vector<CurrencyPair>();
 					list_cp.add(cp);
 					pairPerExchange.put(exchanges_keys[0], list_cp);
@@ -203,32 +204,94 @@ public class App {
 			String[] exchanges_keys = key.split(":");
 			for ( CurrencyPair cp : tradable_pairs.get(key))
 			{
-				System.out.println(key.toString());
-				System.out.print(cp.toString()+"  ");
+				int isValid = 0;
+//				System.out.println(key.toString());
+//				System.out.print(cp.toString()+"  ");
 				try
 				{
 					if (all_tickers.get(exchanges_keys[0]).containsKey(cp)) 
 					{
-						System.out.print(exchanges_keys[0]+": ");					
+//						System.out.print(exchanges_keys[0]+": ");					
 						Ticker tick = all_tickers.get(exchanges_keys[0]).get(cp);
-						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
-						System.out.print("  -  ");
+//						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
+//						System.out.print("  -  ");
+						isValid++;
 					}
 					if (all_tickers.get(exchanges_keys[1]).containsKey(cp)) 
 					{
-						System.out.print(exchanges_keys[1]+": ");					
+//						System.out.print(exchanges_keys[1]+": ");					
 						Ticker tick = all_tickers.get(exchanges_keys[1]).get(cp);
-						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
+//						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
+						isValid++;						
 					}				
+					
+					if ( isValid == 2)
+					{
+						Ticker tick0 = all_tickers.get(exchanges_keys[0]).get(cp);
+						Ticker tick1 = all_tickers.get(exchanges_keys[1]).get(cp);
+						
+						Ticker lowest_buy = null;
+						Ticker highest_sell = null;
+						String lowest_buy_exchange = null;
+						String highest_sell_exchange = null;
+						
+						// lowest buy
+						if (  tick0.getBid().compareTo(tick1.getBid())  <= 0  )
+						{
+							lowest_buy = tick0;
+							lowest_buy_exchange = exchanges_keys[0];
+						}
+						else
+						{
+							lowest_buy = tick1;
+							lowest_buy_exchange = exchanges_keys[1];
+						}
+						
+						// highest sell
+						if (  tick0.getAsk().compareTo(tick1.getAsk())  >= 0  )
+						{
+							highest_sell = tick0;
+							highest_sell_exchange = exchanges_keys[0];
+						}
+						else
+						{
+							highest_sell = tick1;
+							highest_sell_exchange = exchanges_keys[1];							
+						}
+						
+						if ( lowest_buy_exchange != highest_sell_exchange)
+						{
+							// this are different exchanges
+							System.out.println();
+							System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" "+lowest_buy.getBid().toString());
+							System.out.print(" sell "+highest_sell_exchange+" "+highest_sell.getAsk().toString());
+							double buy,sell,delta = 0;
+							
+							buy = lowest_buy.getBid().doubleValue();
+							sell = highest_sell.getAsk().doubleValue();
+							delta = (( sell - buy )* 100) / buy;
+							System.out.println("   delta is  "+delta+"%");
+						}
+						
+						
+					}
 				} catch (NullPointerException e)
 				{
 					System.out.println(e.getMessage());
 				}
-				System.out.println();
+//				System.out.println();
 			}
 		}
 		
-//		MarketDataService marketDataService = bitstamp.getMarketDataService();
+//		MarketDataService marketDataService = exchanges.get("bitfinex").getMarketDataService();
+//		Ticker ticker=null;
+//		try {
+//			ticker = marketDataService.getTicker(new CurrencyPair(Currency.QTUM,Currency.ETH));
+//			System.out.println(ticker);
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 //
 //		Ticker ticker=null;
 //		try {
