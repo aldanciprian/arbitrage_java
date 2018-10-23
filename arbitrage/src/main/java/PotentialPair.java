@@ -1,5 +1,6 @@
 package main.java;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +15,13 @@ public class PotentialPair {
 	Map<String,Ticker> sell_ticker;
 	double delta_procent;
 	CurrencyPair cp;
+	BigDecimal min_trade_ammount_buy;
+	BigDecimal trade_fee_buy;
+	BigDecimal min_trade_ammount_sell;
+	BigDecimal trade_fee_sell;
+	BigDecimal withdraw_fee_buy;
+	BigDecimal withdraw_fee_sell;
+
 	
 	public PotentialPair()
 	{
@@ -21,7 +29,30 @@ public class PotentialPair {
 		sell_ticker = new HashMap<String,Ticker>();
 		delta_procent = 0 ;
 	}
-	
+	public void SetWithdrawBuyFee(BigDecimal fee)
+	{
+		withdraw_fee_buy = new BigDecimal(fee.doubleValue());
+	}
+	public void SetWithdrawSellFee(BigDecimal fee)
+	{
+		withdraw_fee_sell = new BigDecimal(fee.doubleValue());
+	}
+	public void SetMinTradeAmmountBuy(BigDecimal ammount)
+	{
+		min_trade_ammount_buy = new BigDecimal(ammount.doubleValue());
+	}
+	public void SetTradeFeeBuy(BigDecimal fee)
+	{
+		 trade_fee_buy = new BigDecimal(fee.doubleValue());
+	}
+	public void SetMinTradeAmmountSell(BigDecimal ammount)
+	{
+		min_trade_ammount_sell = new BigDecimal(ammount.doubleValue());
+	}
+	public void SetTradeFeeSell(BigDecimal fee)
+	{
+		 trade_fee_sell = new BigDecimal(fee.doubleValue());
+	}
 	public void SetBuyTicker(String exchange,Ticker tick)
 	{
 		buy_ticker.put(exchange, tick);
@@ -37,6 +68,30 @@ public class PotentialPair {
 	public void SetCurrencyPair(CurrencyPair pair)
 	{
 		cp = new CurrencyPair(pair.toString());
+	}
+	public BigDecimal GetMinTradeAmmountBuy()
+	{
+		return min_trade_ammount_buy;
+	}
+	public BigDecimal GetTradeFeeBuy()
+	{
+		return trade_fee_buy;
+	}
+	public BigDecimal GetMinTradeAmmountSell()
+	{
+		return min_trade_ammount_sell;
+	}
+	public BigDecimal GetTradeFeeSell()
+	{
+		return trade_fee_sell;
+	}
+	public BigDecimal GetWithdrawBuyFee()
+	{
+		return withdraw_fee_buy ;
+	}
+	public BigDecimal GetWithdrawSellFee()
+	{
+		return withdraw_fee_sell ;
 	}
 	public Ticker GetBuyTicker() 
 	{
@@ -104,7 +159,10 @@ public class PotentialPair {
 	}
 	
 	public String toString() {
-		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+GetBuyTicker().getBid().toString()+"  SELL  "+GetSellExchange()+"  "+GetSellTicker().getAsk().toString()+"  - "+delta_procent+" %";
+		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+
+					GetBuyTicker().getBid().toString()+"  SELL  "+GetSellExchange()+"  "+GetSellTicker().getAsk().toString()+"  - "
+				   +delta_procent+" % "+" buy fee "+trade_fee_buy.doubleValue()+" sell fee "+trade_fee_sell.doubleValue()+" min trade ammount buy"+min_trade_ammount_buy.doubleValue()+
+				   " min trade ammount sell "+min_trade_ammount_sell.doubleValue()+" withdraw fee buy "+withdraw_fee_buy.doubleValue()+" - withdraw fee sell "+withdraw_fee_sell.doubleValue() ;
 	}
 
 }

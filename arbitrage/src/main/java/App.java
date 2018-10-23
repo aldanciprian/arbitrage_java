@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import org.knowm.xchange.Exchange;
@@ -15,6 +16,8 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.dto.marketdata.Ticker;
+import org.knowm.xchange.dto.meta.CurrencyMetaData;
+import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.poloniex.PoloniexExchange;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.trade.params.TradeHistoryParamsAll;
@@ -29,6 +32,7 @@ public class App {
 	public static Map<String,List<CurrencyPair>> pairPerExchange = null;
 	public static Map<String,Map<CurrencyPair,Ticker>> all_tickers = null;
 	public static List<PotentialPair> ppair_list =  null;
+	public static Map<String,List<CurrencyPair>> all_eth_symbols = null;
 	
 	public static void connectExchanges() {
 		for ( String s: exchangesNames)
@@ -53,10 +57,8 @@ public class App {
 		}
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-		
+	public static void init()
+	{
 		tradable_pairs = new HashMap<String,List<CurrencyPair>>();
 
 		
@@ -70,13 +72,14 @@ public class App {
 		
 		exchanges = new HashMap<String,Exchange>();
 		
-		connectExchanges();
-		
-		
 		all_tickers = new  HashMap<String,Map<CurrencyPair,Ticker>>();
 		
-		Map<String,List<CurrencyPair>> all_eth_symbols = new HashMap<String,List<CurrencyPair>>();
+		all_eth_symbols = new HashMap<String,List<CurrencyPair>>();
 		
+	}
+	
+	public static void setSymbols()
+	{
 		for ( String key: exchangesNames )
 		{
 			List<CurrencyPair> eth_symbols = new Vector<CurrencyPair>();
@@ -84,18 +87,13 @@ public class App {
 			
 			for (CurrencyPair cp : symbols)
 			{
-				if ( (cp.counter == Currency.ETH) || (cp.base == Currency.ETH) )
+				if ( (cp.counter == Currency.ETH) /*|| (cp.base == Currency.ETH)*/ )
 				{
-//					System.out.println(key+" has "+ cp.toString());
 					eth_symbols.add(cp);
 				}
 			}
 			all_eth_symbols.put(key, eth_symbols);
 		}
-		
-		
-		System.out.println();
-		
 		for ( String key: exchangesNames ) 
 		{
 			for ( String key2: exchangesNames )
@@ -120,9 +118,9 @@ public class App {
 					}
 				}
 			}
-
 		}
-
+		
+		
 		pairPerExchange = new HashMap<String,List<CurrencyPair>>();
 		for (String key : tradable_pairs.keySet())
 		{
@@ -180,9 +178,13 @@ public class App {
 					pairPerExchange.put(exchanges_keys[1], list_cp);
 				}
 			}			
-			
-		}
-
+		}		
+		
+	}
+	
+	
+	public static void getTickers()
+	{
 		all_tickers.clear();
 		List<Thread> workers = new Vector<Thread>();
 		for ( String key: exchangesNames )
@@ -203,6 +205,11 @@ public class App {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public static void generatePotentialPairs()
+	{
+		ppair_list.clear();
 		
 		for (String key : tradable_pairs.keySet())
 		{
@@ -277,25 +284,52 @@ public class App {
 							delta = (( sell - buy )* 100) / buy;
 //							System.out.println("   delta is  "+delta+"%");
 							
-							PotentialPair ppair = new PotentialPair();
-							ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
-							ppair.SetSellTicker(highest_sell_exchange, highest_sell);
-							ppair.SetDeltaProcent(delta);
-							ppair.SetCurrencyPair(cp);
-							ppair_list.add(ppair);
+							try 
+							{
+								ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
+								ExchangeMetaData ex_meta_sell = exchanges.get(highest_sell_exchange).getExchangeMetaData();
+								
+								
+								PotentialPair ppair = new PotentialPair();
+								ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
+								ppair.SetSellTicker(highest_sell_exchange, highest_sell);
+								ppair.SetDeltaProcent(delta);
+								ppair.SetCurrencyPair(cp);
+								
+								ppair.SetMinTradeAmmountBuy(ex_meta_buy.getCurrencyPairs().get(cp).getMinimumAmount());
+								ppair.SetTradeFeeBuy(ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee());
+								ppair.SetWithdrawBuyFee(ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee());
+								
+
+								ppair.SetMinTradeAmmountSell(ex_meta_sell.getCurrencyPairs().get(cp).getMinimumAmount());
+								ppair.SetTradeFeeSell(ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee());
+								ppair.SetWithdrawSellFee(ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee());
+								
+								
+								ppair_list.add(ppair);
+							} catch ( NullPointerException e)
+							{
+								e.printStackTrace();
+							}
 						}
 					}
 				} catch (NullPointerException e)
 				{
-					System.out.println(e.getMessage());
+					e.printStackTrace();
 				}
 //				System.out.println();
 			}
-		}
-		
-		
+		}		
+	}
+	
+	public static PotentialPair getMaxPotentialPair()
+	{
 		// max delta procent
-		PotentialPair max_delta_procent_ppair=  ppair_list.get(0);
+		PotentialPair max_delta_procent_ppair=  null;
+		if ( ppair_list.size() > 0 )
+			{
+			max_delta_procent_ppair = ppair_list.get(0);
+			}
 		for ( PotentialPair ppair: ppair_list)
 		{
 			System.out.println(ppair);
@@ -306,25 +340,23 @@ public class App {
 		}
 		System.out.println("The potential pair with highest delta is: \n"+ max_delta_procent_ppair);
 		
-//		MarketDataService marketDataService = exchanges.get("bitfinex").getMarketDataService();
-//		Ticker ticker=null;
-//		try {
-//			ticker = marketDataService.getTicker(new CurrencyPair(Currency.QTUM,Currency.ETH));
-//			System.out.println(ticker);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//
-//		Ticker ticker=null;
-//		try {
-//			ticker = marketDataService.getTicker(CurrencyPair.BTC_USD);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//
-//		System.out.println(ticker.toString());		
+		return max_delta_procent_ppair;
+	}
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		init();
+		
+		connectExchanges();
+		
+		setSymbols();
+
+		getTickers();
+		
+		generatePotentialPairs();
+		
+		getMaxPotentialPair();
 		
 	}
 
