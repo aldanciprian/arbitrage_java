@@ -28,6 +28,7 @@ public class App {
 	public static Map<String,Exchange> exchanges = null;
 	public static Map<String,List<CurrencyPair>> pairPerExchange = null;
 	public static Map<String,Map<CurrencyPair,Ticker>> all_tickers = null;
+	public static List<PotentialPair> ppair_list =  null;
 	
 	public static void connectExchanges() {
 		for ( String s: exchangesNames)
@@ -64,9 +65,13 @@ public class App {
 		exchangesNames.add("binance");
 		exchangesNames.add("poloniex");
 		
+		
+		ppair_list = new Vector<PotentialPair>();		
+		
 		exchanges = new HashMap<String,Exchange>();
 		
 		connectExchanges();
+		
 		
 		all_tickers = new  HashMap<String,Map<CurrencyPair,Ticker>>();
 		
@@ -262,18 +267,23 @@ public class App {
 						if ( lowest_buy_exchange != highest_sell_exchange)
 						{
 							// this are different exchanges
-							System.out.println();
-							System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" "+lowest_buy.getBid().toString());
-							System.out.print(" sell "+highest_sell_exchange+" "+highest_sell.getAsk().toString());
+//							System.out.println();
+//							System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" "+lowest_buy.getBid().toString());
+//							System.out.print(" sell "+highest_sell_exchange+" "+highest_sell.getAsk().toString());
 							double buy,sell,delta = 0;
 							
 							buy = lowest_buy.getBid().doubleValue();
 							sell = highest_sell.getAsk().doubleValue();
 							delta = (( sell - buy )* 100) / buy;
-							System.out.println("   delta is  "+delta+"%");
+//							System.out.println("   delta is  "+delta+"%");
+							
+							PotentialPair ppair = new PotentialPair();
+							ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
+							ppair.SetSellTicker(highest_sell_exchange, highest_sell);
+							ppair.SetDeltaProcent(delta);
+							ppair.SetCurrencyPair(cp);
+							ppair_list.add(ppair);
 						}
-						
-						
 					}
 				} catch (NullPointerException e)
 				{
@@ -282,6 +292,19 @@ public class App {
 //				System.out.println();
 			}
 		}
+		
+		
+		// max delta procent
+		PotentialPair max_delta_procent_ppair=  ppair_list.get(0);
+		for ( PotentialPair ppair: ppair_list)
+		{
+			System.out.println(ppair);
+			if ( max_delta_procent_ppair.GetDeltaProcent() < ppair.GetDeltaProcent() )
+			{
+				max_delta_procent_ppair = ppair;
+			}
+		}
+		System.out.println("The potential pair with highest delta is: \n"+ max_delta_procent_ppair);
 		
 //		MarketDataService marketDataService = exchanges.get("bitfinex").getMarketDataService();
 //		Ticker ticker=null;

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.marketdata.Ticker;
 
 public class PotentialPair {
@@ -12,6 +13,7 @@ public class PotentialPair {
 	Map<String,Ticker> buy_ticker;
 	Map<String,Ticker> sell_ticker;
 	double delta_procent;
+	CurrencyPair cp;
 	
 	public PotentialPair()
 	{
@@ -32,6 +34,10 @@ public class PotentialPair {
 	{
 		delta_procent = proc;
 	}
+	public void SetCurrencyPair(CurrencyPair pair)
+	{
+		cp = new CurrencyPair(pair.toString());
+	}
 	public Ticker GetBuyTicker() 
 	{
 		Set<String> ks = null;
@@ -44,6 +50,61 @@ public class PotentialPair {
 		}
 		else
 			return  null;
+	}
+	public String GetBuyExchange()
+	{
+		Set<String> ks = null;
+		String key = null;
+		ks = buy_ticker.keySet();
+		if ( ks.size() == 1)
+		{
+			key = (String) ks.toArray()[0];
+			return key;
+		}
+		else
+		{
+			return null;
+		}
+	}
+	public Ticker GetSellTicker() 
+	{
+		Set<String> ks = null;
+		String key = null;
+		ks = sell_ticker.keySet();
+		if ( ks.size() == 1)
+		{
+			key = (String) ks.toArray()[0];
+			return sell_ticker.get(key);
+		}
+		else
+			return  null;
+	}
+	public String GetSellExchange()
+	{
+		Set<String> ks = null;
+		String key = null;
+		ks = sell_ticker.keySet();
+		if ( ks.size() == 1)
+		{
+			key = (String) ks.toArray()[0];
+			return key;
+		}
+		else
+		{
+			return null;
+		}
+	}	
+	public double GetDeltaProcent()
+	{
+		return delta_procent;
+	}
+	public CurrencyPair GetCurrencyPair()
+	{
+		return cp;
+	}
+	
+	public String toString() {
+		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+GetBuyTicker().getBid().toString()+"  SELL  "+GetSellExchange()+"  "+GetSellTicker().getAsk().toString()+"  - "+delta_procent+" %";
 	}
 
 }
