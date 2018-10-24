@@ -290,7 +290,7 @@ public class App {
 								ExchangeMetaData ex_meta_sell = exchanges.get(highest_sell_exchange).getExchangeMetaData();
 								
 								System.out.println(ex_meta_buy);
-								System.exit(0);
+
 								PotentialPair ppair = new PotentialPair();
 								ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
 								ppair.SetSellTicker(highest_sell_exchange, highest_sell);
