@@ -16,11 +16,10 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.dto.marketdata.Ticker;
-import org.knowm.xchange.dto.meta.CurrencyMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.poloniex.PoloniexExchange;
-import org.knowm.xchange.service.marketdata.MarketDataService;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamsAll;
+
+
 
 
 
@@ -89,6 +88,7 @@ public class App {
 			{
 				if ( (cp.counter == Currency.ETH) /*|| (cp.base == Currency.ETH)*/ )
 				{
+					
 					eth_symbols.add(cp);
 				}
 			}
@@ -224,7 +224,7 @@ public class App {
 					if (all_tickers.get(exchanges_keys[0]).containsKey(cp)) 
 					{
 //						System.out.print(exchanges_keys[0]+": ");					
-						Ticker tick = all_tickers.get(exchanges_keys[0]).get(cp);
+//						Ticker tick = all_tickers.get(exchanges_keys[0]).get(cp);
 //						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
 //						System.out.print("  -  ");
 						isValid++;
@@ -232,7 +232,7 @@ public class App {
 					if (all_tickers.get(exchanges_keys[1]).containsKey(cp)) 
 					{
 //						System.out.print(exchanges_keys[1]+": ");					
-						Ticker tick = all_tickers.get(exchanges_keys[1]).get(cp);
+//						Ticker tick = all_tickers.get(exchanges_keys[1]).get(cp);
 //						System.out.print("SELL "+tick.getAsk().toString()+"  BUY "+tick.getBid().toString());
 						isValid++;						
 					}				
@@ -289,7 +289,8 @@ public class App {
 								ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
 								ExchangeMetaData ex_meta_sell = exchanges.get(highest_sell_exchange).getExchangeMetaData();
 								
-								
+								System.out.println(ex_meta_buy);
+								System.exit(0);
 								PotentialPair ppair = new PotentialPair();
 								ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
 								ppair.SetSellTicker(highest_sell_exchange, highest_sell);
@@ -352,11 +353,21 @@ public class App {
 		
 		setSymbols();
 
-		getTickers();
-		
-		generatePotentialPairs();
-		
-		getMaxPotentialPair();
+		while ( true )
+		{
+			getTickers();
+			
+			generatePotentialPairs();
+			
+			getMaxPotentialPair();
+
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 	}
 
