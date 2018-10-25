@@ -1,4 +1,4 @@
-package com.pasarica.arbitrage;
+package arbitrage;
 
 import java.io.IOException;
 import java.util.HashMap;

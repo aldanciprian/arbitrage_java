@@ -1,4 +1,4 @@
-package com.pasarica.arbitrage;
+package arbitrage;
 
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.marketdata.Ticker;
