@@ -100,8 +100,8 @@ public class App {
 
     public static void init()
     {
-        connectDB();
-        System.exit(0);
+//        connectDB();
+
         tradable_pairs = new HashMap<String,List<CurrencyPair>>();
 
 
@@ -350,7 +350,47 @@ public class App {
                                 ppair.SetTradeFeeSell(ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee());
                                 ppair.SetWithdrawSellFee(ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee());
 
+                                //simulate for 100 base units
+                                double buy_withdraw_fee = ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee().doubleValue();
+                                double sell_withdraw_fee = ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee().doubleValue();                                
+                                double simulation_ammount = 100;
+                                simulation_ammount = simulation_ammount + buy_withdraw_fee;
+                                double buy_price = lowest_buy.getBid().doubleValue();                                
+                                double result_buy = simulation_ammount * buy_price;
+                                double buy_fee = ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
+                                if ( lowest_buy_exchange.equals("poloniex"))
+                                {
+                                	buy_fee = buy_fee * 100;
+                                }
+                                double result_ammount = simulation_ammount - ((buy_fee/100) * simulation_ammount );                                
+                                System.out.println("buy "+simulation_ammount+" "+cp.base.toString()+" from "+lowest_buy_exchange+" with price "+buy_price+"  =  "+result_buy+"  ETH " + result_ammount + " "+cp.base.toString() );
 
+                                double sell_price = highest_sell.getAsk().doubleValue();
+                                double result_sell = result_ammount * sell_price;
+                                double sell_fee = ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
+                                if ( highest_sell_exchange.equals("poloniex"))
+                                {
+                                	sell_fee = sell_fee * 100;
+                                }
+                                result_sell = result_sell - ((sell_fee/100)* result_sell);
+                                System.out.println("sell "+result_ammount+" "+cp.base.toString()+" from "+highest_sell_exchange+" with price "+sell_price+"  =  "+result_sell+" ETH");
+
+                                // prepare to swap
+                                
+                                double result_delta = simulation_ammount - result_ammount;
+                                result_delta = result_delta / 2;
+                                result_ammount = result_ammount - result_delta;
+                                result_ammount = result_ammount +  (buy_withdraw_fee / 2);
+                                System.out.println("withdraw fee "+buy_withdraw_fee+" "+result_ammount+" "+(result_ammount - buy_withdraw_fee)+" "+result_delta+" "+cp.base.toString());
+                                
+                                
+                                // prepare to swap
+
+                                double eth_delta = result_sell - result_buy;
+                                eth_delta = eth_delta / 2;
+                                double eth_swap = result_sell - eth_delta;
+                                eth_swap = eth_swap +  ( sell_withdraw_fee /2);
+                                System.out.println("withdraw fee "+sell_withdraw_fee+" "+eth_swap+" "+(eth_swap - eth_delta)+" "+eth_delta+" "+cp.counter.toString());
                                 ppair_list.add(ppair);
                             } catch ( NullPointerException e)
                             {
@@ -397,7 +437,7 @@ public class App {
 
         setSymbols();
 
-        while ( true )
+//        while ( true )
         {
             getTickers();
 
