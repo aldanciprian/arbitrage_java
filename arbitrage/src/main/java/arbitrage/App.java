@@ -1,6 +1,10 @@
 package arbitrage;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,7 @@ public class App {
     public static Map<String,Map<CurrencyPair,Ticker>> all_tickers = null;
     public static List<PotentialPair> ppair_list =  null;
     public static Map<String,List<CurrencyPair>> all_eth_symbols = null;
+    public static Map<String,List<CurrencyPair>> all_filters =  null;
 
     public static void connectDB()
     {
@@ -119,6 +124,56 @@ public class App {
 
         all_eth_symbols = new HashMap<String,List<CurrencyPair>>();
 
+        all_filters = new HashMap<String,List<CurrencyPair>>();
+        
+        // Open the file
+        try 
+        {
+            FileInputStream fstream = new FileInputStream("src/main/resources/whitepairs.txt");
+            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+            String strLine;
+
+            //Read File Line By Line
+            while ((strLine = br.readLine()) != null)   {
+              // Print the content on the console
+//              System.out.println (strLine);
+              if ( strLine.contains("="))
+              {
+                  String[] parts = strLine.split("=");
+                  String[] base_counter = parts[1].split("/");
+                  if ( all_filters.containsKey(parts[0]))
+                  {
+                	  all_filters.get(parts[0]).add(new CurrencyPair(base_counter[0],base_counter[1]));
+                  }
+                  else
+                  {
+                	  List<CurrencyPair> pairs = new Vector<CurrencyPair>();
+                	  pairs.add(new CurrencyPair(base_counter[0],base_counter[1]));
+                	  all_filters.put(parts[0],pairs);                	  
+                  }
+              }
+            }
+            
+//            Set<String> keys = all_filters.keySet();
+//            for ( String key :  keys)
+//            {
+//            	System.out.print(key+" ");
+//            	for ( CurrencyPair cp : all_filters.get(key)) {
+//            		System.out.print(cp.toString()+",");
+//            	}
+//            	System.out.println();
+//            }
+
+            //Close the input stream
+            br.close();
+        } catch (Exception e)
+        {
+        	e.printStackTrace();
+        }
+        
+//        System.exit(0);
+        
     }
 
     public static void setSymbols()
@@ -130,11 +185,24 @@ public class App {
 
             for (CurrencyPair cp : symbols)
             {
-                if ( (cp.counter == Currency.ETH) /*|| (cp.base == Currency.ETH)*/ )
-                {
+            	// check if it in white list
+            	boolean isWhite =  false;
+            	for ( CurrencyPair white_cp : all_filters.get(key)) {
+            		if  ( cp.compareTo(white_cp) == 0)
+            		{
+            			isWhite = true;
+            			break;
+            		}
+            	}
+            	
+//            	if ( isWhite == true)  
+            	{
+                    if ( (cp.counter == Currency.ETH) /*|| (cp.base == Currency.ETH)*/ )
+                    {
 
-                    eth_symbols.add(cp);
-                }
+                        eth_symbols.add(cp);
+                    }
+            	}
             }
             all_eth_symbols.put(key, eth_symbols);
         }
@@ -338,7 +406,7 @@ public class App {
                                 PotentialPair ppair = new PotentialPair();
                                 ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
                                 ppair.SetSellTicker(highest_sell_exchange, highest_sell);
-                                ppair.SetDeltaProcent(delta);
+
                                 ppair.SetCurrencyPair(cp);
 
                                 ppair.SetMinTradeAmmountBuy(ex_meta_buy.getCurrencyPairs().get(cp).getMinimumAmount());
@@ -351,51 +419,97 @@ public class App {
                                 ppair.SetWithdrawSellFee(ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee());
 
                                 //simulate for 100 base units
+                                double delta_profit = 0;
+                                double delta_profit_procent = 0;
+                                double contingent_procent = 0;
                                 double buy_withdraw_fee = ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee().doubleValue();
-                                double sell_withdraw_fee = ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee().doubleValue();                                
-                                double simulation_ammount = 100;
-                                simulation_ammount = simulation_ammount + buy_withdraw_fee;
-                                double buy_price = lowest_buy.getBid().doubleValue();                                
-                                double result_buy = simulation_ammount * buy_price;
+                                double sell_withdraw_fee = ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee().doubleValue();
                                 double buy_fee = ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
                                 if ( lowest_buy_exchange.equals("poloniex"))
                                 {
                                 	buy_fee = buy_fee * 100;
                                 }
-                                double result_ammount = simulation_ammount - ((buy_fee/100) * simulation_ammount );                                
-                                System.out.println("buy "+simulation_ammount+" "+cp.base.toString()+" from "+lowest_buy_exchange+" with price "+buy_price+"  =  "+result_buy+"  ETH " + result_ammount + " "+cp.base.toString() );
-
-                                double sell_price = highest_sell.getAsk().doubleValue();
-                                double result_sell = result_ammount * sell_price;
                                 double sell_fee = ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
                                 if ( highest_sell_exchange.equals("poloniex"))
                                 {
                                 	sell_fee = sell_fee * 100;
                                 }
-                                result_sell = result_sell - ((sell_fee/100)* result_sell);
-                                System.out.println("sell "+result_ammount+" "+cp.base.toString()+" from "+highest_sell_exchange+" with price "+sell_price+"  =  "+result_sell+" ETH");
+                                double buy_price = lowest_buy.getBid().doubleValue();
+                                buy_price = buy_price + ((contingent_procent/100)*buy_price);
+                                double sell_price = highest_sell.getAsk().doubleValue();
+                                sell_price = sell_price - ((contingent_procent/100)*sell_price);
+                                
+                                double dollar_ammount  = 0.00469;  // aprox 30 $
+                                CurrencyPair dolar_pair = new CurrencyPair(cp.base,Currency.BTC);
+//                                System.out.println(dolar_pair.toString());
+                                Ticker base_dollar = exchanges.get(lowest_buy_exchange).getMarketDataService().getTicker(dolar_pair);
+                                
+                                double simulation_ammount = dollar_ammount / base_dollar.getLast().doubleValue();
+                                double buy_ammount = simulation_ammount;
+                                double buy_eth_cost = buy_ammount * buy_price;
+                                double bought_ammount = buy_ammount - (buy_ammount*(buy_fee/100));
+                                
+                                double sell_ammount = bought_ammount - buy_withdraw_fee;
+                                double sell_eth_result = sell_ammount * sell_price;
+                                sell_eth_result = sell_eth_result - (sell_eth_result*(sell_fee/100));
+                                double swapped_eth = sell_eth_result - sell_withdraw_fee;
+                                double to_be_swapped_eth = swapped_eth - ((swapped_eth - buy_eth_cost) /2);
+                                
+                                if ( swapped_eth < buy_eth_cost)
+                                {
+                                	// negative profit
+                                	delta_profit = buy_eth_cost - swapped_eth;
+                                	delta_profit_procent = ( delta_profit * 100) / buy_eth_cost;
+                                	delta_profit_procent *= -1;
+                                	delta_profit *= -1;
+                                }
+                                else
+                                {
+                                  	// positive profit
+                                	delta_profit = swapped_eth - buy_eth_cost;
+                                	delta_profit_procent = ( delta_profit * 100) / buy_eth_cost;
+                                }
+                                
+                                
+                                ppair.SetMisc(" ");
+//                                System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" ");
+//                                System.out.print("buy ammount "+buy_ammount+" "+cp.base.toString()+" bought  ammount "+bought_ammount+" "+cp.base.toString()+" ");
+//                                System.out.print(" buy eth cost "+buy_eth_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" ");
+//                                System.out.print(" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_eth_result+" "+cp.counter.toString()+" ");
+//                                System.out.print("swapped eth "+swapped_eth+" to be swapped "+to_be_swapped_eth+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" ");
+//                                System.out.println(" delta profit procent "+delta_profit_procent+" %");
+//
 
-                                // prepare to swap
-                                
-                                double result_delta = simulation_ammount - result_ammount;
-                                result_delta = result_delta / 2;
-                                result_ammount = result_ammount - result_delta;
-                                result_ammount = result_ammount +  (buy_withdraw_fee / 2);
-                                System.out.println("withdraw fee "+buy_withdraw_fee+" "+result_ammount+" "+(result_ammount - buy_withdraw_fee)+" "+result_delta+" "+cp.base.toString());
-                                
-                                
-                                // prepare to swap
 
-                                double eth_delta = result_sell - result_buy;
-                                eth_delta = eth_delta / 2;
-                                double eth_swap = result_sell - eth_delta;
-                                eth_swap = eth_swap +  ( sell_withdraw_fee /2);
-                                System.out.println("withdraw fee "+sell_withdraw_fee+" "+eth_swap+" "+(eth_swap - eth_delta)+" "+eth_delta+" "+cp.counter.toString());
-                                ppair_list.add(ppair);
+                                if ( delta_profit > 0)
+                                {
+                                	///
+                                	ppair.SetBuyReq(lowest_buy_exchange,new BigDecimal(buy_price) ,new BigDecimal(buy_ammount),new BigDecimal(bought_ammount));
+                                	ppair.SetSellReq(highest_sell_exchange,new BigDecimal(sell_price) ,new BigDecimal(sell_ammount),new BigDecimal(to_be_swapped_eth));
+                                	
+                                    ppair.SetMisc(cp.toString()+" buy "+lowest_buy_exchange+" "+
+                                    		"buy ammount "+buy_ammount+" "+cp.base.toString()+" bought  ammount "+bought_ammount+" "+cp.base.toString()+" "+
+                                    		" buy eth cost "+buy_eth_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" "+
+                                    		" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_eth_result+" "+cp.counter.toString()+" "+
+                                    		"swapped eth "+swapped_eth+" to be swapped "+to_be_swapped_eth+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" "+
+                                    		" delta profit procent "+delta_profit_procent+" %"
+                                    		);
+
+                                    ppair.SetDeltaProcent(delta_profit_procent);                                    
+                                    
+                                    ppair_list.add(ppair);                                	
+                                }
+                                else
+                                {
+                                	System.out.println(cp.toString()+ " ############### negative profit "+delta_profit_procent+" %");
+                                }
                             } catch ( NullPointerException e)
                             {
                                 e.printStackTrace();
-                            }
+                            } catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
                         }
                     }
                 } catch (NullPointerException e)
@@ -410,6 +524,7 @@ public class App {
     public static PotentialPair getMaxPotentialPair()
     {
         // max delta procent
+    	System.out.println("LIST of potential PAIRS : ");
         PotentialPair max_delta_procent_ppair=  null;
         if ( ppair_list.size() > 0 )
         {
@@ -437,7 +552,7 @@ public class App {
 
         setSymbols();
 
-//        while ( true )
+        while ( true )
         {
             getTickers();
 

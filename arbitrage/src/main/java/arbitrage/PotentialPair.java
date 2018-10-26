@@ -21,13 +21,45 @@ public class PotentialPair {
 	BigDecimal trade_fee_sell;
 	BigDecimal withdraw_fee_buy;
 	BigDecimal withdraw_fee_sell;
-
+	
+	String buy_exchange;
+	BigDecimal buy_price;
+	BigDecimal buy_ammount;
+	BigDecimal swap_buy_ammount;
+	
+	String sell_exchange;
+	BigDecimal sell_price;
+	BigDecimal sell_ammount;
+	BigDecimal swap_sell_ammount;
+	
+	String misc;
 	
 	public PotentialPair()
 	{
 		buy_ticker = new HashMap<String,Ticker>();
 		sell_ticker = new HashMap<String,Ticker>();
 		delta_procent = 0 ;
+	}
+	
+	public void SetBuyReq(String exchange,BigDecimal price,BigDecimal ammount,BigDecimal swap_ammount)
+	{
+		buy_exchange = exchange;
+		buy_price = price;
+		buy_ammount = ammount;
+		swap_buy_ammount = swap_ammount;
+	}
+
+	public void SetSellReq(String exchange,BigDecimal price,BigDecimal ammount,BigDecimal swap_ammount)
+	{
+		sell_exchange = exchange;
+		sell_price = price;
+		sell_ammount = ammount;
+		swap_sell_ammount = swap_ammount;
+	}	
+	
+	public void SetMisc(String _misc)
+	{
+		misc = _misc;
 	}
 	public void SetWithdrawBuyFee(BigDecimal fee)
 	{
@@ -95,74 +127,69 @@ public class PotentialPair {
 	}
 	public Ticker GetBuyTicker() 
 	{
-		Set<String> ks = null;
-		String key = null;
-		ks = buy_ticker.keySet();
-		if ( ks.size() == 1)
-		{
-			key = (String) ks.toArray()[0];
-			return buy_ticker.get(key);
-		}
-		else
-			return  null;
+		return buy_ticker.get(buy_exchange);
 	}
 	public String GetBuyExchange()
 	{
-		Set<String> ks = null;
-		String key = null;
-		ks = buy_ticker.keySet();
-		if ( ks.size() == 1)
-		{
-			key = (String) ks.toArray()[0];
-			return key;
-		}
-		else
-		{
-			return null;
-		}
+		return buy_exchange;
 	}
 	public Ticker GetSellTicker() 
 	{
-		Set<String> ks = null;
-		String key = null;
-		ks = sell_ticker.keySet();
-		if ( ks.size() == 1)
-		{
-			key = (String) ks.toArray()[0];
-			return sell_ticker.get(key);
-		}
-		else
-			return  null;
+		return sell_ticker.get(sell_exchange);
 	}
 	public String GetSellExchange()
 	{
-		Set<String> ks = null;
-		String key = null;
-		ks = sell_ticker.keySet();
-		if ( ks.size() == 1)
-		{
-			key = (String) ks.toArray()[0];
-			return key;
-		}
-		else
-		{
-			return null;
-		}
+		return sell_exchange;
 	}	
 	public double GetDeltaProcent()
 	{
 		return delta_procent;
 	}
+	public String GetMisc()
+	{
+		return misc;
+	}
+	
 	public CurrencyPair GetCurrencyPair()
 	{
 		return cp;
 	}
 	
+	
+	public BigDecimal GetBuyPrice()
+	{
+		return buy_price;
+	}
+	public BigDecimal GetBuyAmmount()
+	{
+		return buy_ammount;
+	}
+	public BigDecimal GetBuySwapAmmount()
+	{
+		return swap_buy_ammount;
+	}
+	
+	public BigDecimal GetSellPrice()
+	{
+		return sell_price;
+	}
+	public BigDecimal GetSellAmmount()
+	{
+		return sell_ammount;
+	}
+	public BigDecimal GetSellSwapAmmount()
+	{
+		return swap_sell_ammount;
+	}
+	
+	
 	public String toString() {
 		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+
 					GetBuyTicker().getBid().toString()+"  SELL  "+GetSellExchange()+"  "+GetSellTicker().getAsk().toString()+"  - "
 				   +delta_procent+" % "+" buy fee "+trade_fee_buy.doubleValue()+" sell fee "+trade_fee_sell.doubleValue()+" min trade ammount buy"+min_trade_ammount_buy.doubleValue()+
-				   " min trade ammount sell "+min_trade_ammount_sell.doubleValue()+" withdraw fee buy "+withdraw_fee_buy.doubleValue()+" - withdraw fee sell "+withdraw_fee_sell.doubleValue() ;
+				   " min trade ammount sell "+min_trade_ammount_sell.doubleValue()+" withdraw fee buy "+withdraw_fee_buy.doubleValue()+" - withdraw fee sell "+withdraw_fee_sell.doubleValue()+"\n"+misc+" \n"+
+				   " BUY "+ buy_exchange+" "+buy_price.doubleValue()+" "+buy_ammount.doubleValue()+" "+swap_buy_ammount.doubleValue()+" --- "+
+				   " SELL "+ sell_exchange+" "+sell_price.doubleValue()+" "+sell_ammount.doubleValue()+" "+swap_sell_ammount.doubleValue();
 	}
 
 }
