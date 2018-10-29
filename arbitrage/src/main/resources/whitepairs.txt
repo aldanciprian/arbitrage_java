@@ -1,7 +1,0 @@
-bitfinex=GNT/ETH
-bitfinex=KNC/ETH
-
-poloniex=GNT/ETH
-poloniex=KNC/ETH
-
-binance=KNC/ETH

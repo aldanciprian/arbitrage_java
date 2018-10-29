@@ -6,11 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.sql.*;
+import java.util.Date;
 
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
@@ -21,8 +23,10 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.dto.marketdata.Ticker;
+import org.knowm.xchange.dto.marketdata.Trade;
+import org.knowm.xchange.dto.marketdata.Trades;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
-import org.knowm.xchange.poloniex.PoloniexExchange;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +79,7 @@ public class App {
             
             query +=  "create table if not exists "+positive_pairs+" ( "+cols +" );";
             
-            System.out.println(query);
+//            System.out.println(query);
             
             // Step 2: Allocate a 'Statement' object in the Connection
             Statement stmt = conn.createStatement();
@@ -101,7 +105,7 @@ public class App {
                     spec = new BinanceExchange().getDefaultExchangeSpecification();
                     break;
                 case "poloniex":
-                    spec = new PoloniexExchange().getDefaultExchangeSpecification();
+                    spec = new PoloniexExchangeV2().getDefaultExchangeSpecification();
                     break;
             }
 
@@ -337,6 +341,7 @@ public class App {
             for ( CurrencyPair cp : tradable_pairs.get(key))
             {
                 int isValid = 0;
+                
 //				System.out.println(key.toString());
 //				System.out.print(cp.toString()+"  ");
                 try
@@ -393,6 +398,70 @@ public class App {
 
                         if ( lowest_buy_exchange != highest_sell_exchange)
                         {
+                            
+                            // check that the last trade was not so long ago on any exchange
+                        	try {
+								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp, 10);
+//								System.out.println(t.toString());
+								Iterator<Trade> itr  = t.getTrades().iterator();
+								Trade tr = null;
+								while  (  itr.hasNext() )
+								{
+									tr=itr.next();
+								}
+								if ( tr == null )
+								{
+									continue;
+								}
+								Date tstmp = tr.getTimestamp();
+								Date now = new Date();
+								
+								// if the last trade was to long ago..more than 60 seconds jump over this pair
+								if ( ( now.getTime() - tstmp.getTime() ) > 60000)
+								{
+									System.out.println(tr);
+									System.out.println(now.toString()+" "+tstmp.toString()+" "+tstmp.getTime());
+									System.out.println("Last trade was long time ago "+lowest_buy_exchange+" "+( now.getTime() - tstmp.getTime() ));
+									continue;
+								}
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+                        	
+                            
+                        	try {
+								Trades  t = exchanges.get(highest_sell_exchange).getMarketDataService().getTrades(cp, 10);
+//								System.out.println(t.toString());
+								Iterator<Trade> itr  = t.getTrades().iterator();
+								Trade tr = null;
+								while  (  itr.hasNext() )
+								{
+									tr=itr.next();
+								}
+								if ( tr == null )
+								{
+									continue;
+								}
+								Date tstmp = tr.getTimestamp();
+								Date now = new Date();
+								
+								// if the last trade was to long ago..more than 60 seconds jump over this pair
+								if ( ( now.getTime() - tstmp.getTime() ) > 60000)
+								{
+									System.out.println(tr);
+									System.out.println("Last trade was long time ago "+highest_sell_exchange+" "+( now.getTime() - tstmp.getTime() ));
+									continue;
+								}
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+                        	
+                        	
+                        	
+                        	
+                        	
                             try
                             {
                                 ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
