@@ -416,8 +416,8 @@ public class App {
 								Date tstmp = tr.getTimestamp();
 								Date now = new Date();
 								
-								// if the last trade was to long ago..more than 60 seconds jump over this pair
-								if ( ( now.getTime() - tstmp.getTime() ) > 60000)
+								// if the last trade was to long ago..more than 120 seconds jump over this pair
+								if ( ( now.getTime() - tstmp.getTime() ) > 120000)
 								{
 									System.out.println(tr);
 									System.out.println(now.toString()+" "+tstmp.toString()+" "+tstmp.getTime());
@@ -446,8 +446,8 @@ public class App {
 								Date tstmp = tr.getTimestamp();
 								Date now = new Date();
 								
-								// if the last trade was to long ago..more than 60 seconds jump over this pair
-								if ( ( now.getTime() - tstmp.getTime() ) > 60000)
+								// if the last trade was to long ago..more than 120 seconds jump over this pair
+								if ( ( now.getTime() - tstmp.getTime() ) > 120000)
 								{
 									System.out.println(tr);
 									System.out.println("Last trade was long time ago "+highest_sell_exchange+" "+( now.getTime() - tstmp.getTime() ));
@@ -598,7 +598,7 @@ public class App {
         for ( PotentialPair ppair: ppair_list)
         {
             System.out.println(ppair);
-//            ppair.InsertPotentialPair(conn,positive_pairs,ppair);
+            ppair.InsertPotentialPair(conn,positive_pairs,ppair);
             if ( max_delta_procent_ppair.GetDeltaProcent() < ppair.GetDeltaProcent() )
             {
                 max_delta_procent_ppair = ppair;
