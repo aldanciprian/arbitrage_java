@@ -401,7 +401,7 @@ public class App {
                             
                             // check that the last trade was not so long ago on any exchange
                         	try {
-								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp, 10);
+								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp);
 //								System.out.println(t.toString());
 								Iterator<Trade> itr  = t.getTrades().iterator();
 								Trade tr = null;
