@@ -1,12 +1,14 @@
 package arbitrage;
 
 import java.math.BigDecimal;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.marketdata.Ticker;
+
 
 public class PotentialPair {
 	
@@ -182,6 +184,42 @@ public class PotentialPair {
 		return swap_sell_ammount;
 	}
 	
+	public void InsertPotentialPair(Connection conn,String table,PotentialPair ppair)
+	{
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		String query="";
+		String cols="";
+		
+		cols += "'"+timestamp.toString()+"'";
+		cols += ",";
+		cols += "'"+ppair.cp.toString()+"'";
+		cols += ",";
+		cols += "'"+ppair.buy_exchange.toString()+"'";
+		cols += ",";
+		cols += BigDecimal.valueOf(ppair.buy_price.doubleValue());		
+		cols += ",";
+		cols += "'"+ppair.sell_exchange.toString()+"'";		
+		cols += ",";
+		cols += BigDecimal.valueOf(ppair.sell_price.doubleValue());
+		cols += ",";
+		cols += BigDecimal.valueOf(ppair.delta_procent);		
+		
+		
+		
+		query = "insert into "+table+" values ("+cols+")";
+		System.out.println(query);
+		
+	      // Step 2: Allocate a 'Statement' object in the Connection
+        Statement stmt;
+		try {
+			stmt = conn.createStatement();
+	        stmt.execute(query);			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
 	
 	public String toString() {
 		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+

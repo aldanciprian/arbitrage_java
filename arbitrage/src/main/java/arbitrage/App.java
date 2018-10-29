@@ -23,6 +23,11 @@ import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.poloniex.PoloniexExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
 
 
 
@@ -38,45 +43,48 @@ public class App {
     public static List<PotentialPair> ppair_list =  null;
     public static Map<String,List<CurrencyPair>> all_eth_symbols = null;
     public static Map<String,List<CurrencyPair>> all_filters =  null;
+    
+    
+    public static Connection conn = null;
+    public static String positive_pairs = "positive_pairs";
+    
 
     public static void connectDB()
     {
         try {
             // Step 1: Allocate a database 'Connection' object
-            Connection conn = DriverManager.getConnection(
+        	String query="";
+        	String cols = "";
+            conn = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/arbitrage", "ciprian", "ciprian");
             // MySQL: "jdbc:mysql://hostname:port/databaseName", "username", "password"
 
+            cols += " tstmp TIMESTAMP ";
+            cols += ",";
+            cols += " pair VARCHAR(40) ";
+            cols += ",";            
+            cols += " buy_exchange VARCHAR(40) ";
+            cols += ",";
+            cols += " buy_price DOUBLE ";
+            cols += ",";
+            cols += " sell_exchange VARCHAR(40) ";
+            cols += ",";
+            cols += " sell_price DOUBLE ";
+            cols += ",";
+            cols += " delta_procent DOUBLE ";
+            
+            query +=  "create table if not exists "+positive_pairs+" ( "+cols +" );";
+            
+            System.out.println(query);
+            
             // Step 2: Allocate a 'Statement' object in the Connection
             Statement stmt = conn.createStatement();
 
-            // Step 3: Execute a SQL SELECT query, the query result
-            //  is returned in a 'ResultSet' object.
-            String strSelect = "show tables";
-            System.out.println("The SQL query is: " + strSelect); // Echo For debugging
-            System.out.println();
-            stmt.execute("show tables");
-
-            ResultSet rset = stmt.executeQuery(strSelect);
-//
-//	         // Step 4: Process the ResultSet by scrolling the cursor forward via next().
-//	         //  For each row, retrieve the contents of the cells with getXxx(columnName).
-            System.out.println("The records selected are:"+rset);
-            int rowCount = 0;
-            while(rset.next()) {   // Move the cursor to the next row, return false if no more row
-                ResultSetMetaData resm = rset.getMetaData();
-                System.out.println(resm.getTableName(0));
-//	            String title = rset.getString("title");
-//	            double price = rset.getDouble("price");
-//	            int    qty   = rset.getInt("qty");
-//	            System.out.println(title + ", " + price + ", " + qty);
-                ++rowCount;
-            }
-//	         System.out.println("Total number of records = " + rowCount);
-
+            stmt.execute(query);
 
         } catch(SQLException ex) {
             ex.printStackTrace();
+            System.exit(-1);
         }
     }
 
@@ -105,7 +113,7 @@ public class App {
 
     public static void init()
     {
-//        connectDB();
+        connectDB();
 
         tradable_pairs = new HashMap<String,List<CurrencyPair>>();
 
@@ -385,23 +393,10 @@ public class App {
 
                         if ( lowest_buy_exchange != highest_sell_exchange)
                         {
-                            // this are different exchanges
-//							System.out.println();
-//							System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" "+lowest_buy.getBid().toString());
-//							System.out.print(" sell "+highest_sell_exchange+" "+highest_sell.getAsk().toString());
-                            double buy,sell,delta = 0;
-
-                            buy = lowest_buy.getBid().doubleValue();
-                            sell = highest_sell.getAsk().doubleValue();
-                            delta = (( sell - buy )* 100) / buy;
-//							System.out.println("   delta is  "+delta+"%");
-
                             try
                             {
                                 ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
                                 ExchangeMetaData ex_meta_sell = exchanges.get(highest_sell_exchange).getExchangeMetaData();
-
-                                System.out.println(ex_meta_buy);
 
                                 PotentialPair ppair = new PotentialPair();
                                 ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
@@ -484,6 +479,7 @@ public class App {
                                 if ( delta_profit > 0)
                                 {
                                 	///
+                                	System.out.println(cp.toString()+ " ############### positive profit "+delta_profit_procent+" %");
                                 	ppair.SetBuyReq(lowest_buy_exchange,new BigDecimal(buy_price) ,new BigDecimal(buy_ammount),new BigDecimal(bought_ammount));
                                 	ppair.SetSellReq(highest_sell_exchange,new BigDecimal(sell_price) ,new BigDecimal(sell_ammount),new BigDecimal(to_be_swapped_eth));
                                 	
@@ -505,7 +501,7 @@ public class App {
                                 }
                             } catch ( NullPointerException e)
                             {
-                                e.printStackTrace();
+                              //  e.printStackTrace();
                             } catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -533,6 +529,7 @@ public class App {
         for ( PotentialPair ppair: ppair_list)
         {
             System.out.println(ppair);
+//            ppair.InsertPotentialPair(conn,positive_pairs,ppair);
             if ( max_delta_procent_ppair.GetDeltaProcent() < ppair.GetDeltaProcent() )
             {
                 max_delta_procent_ppair = ppair;
@@ -546,6 +543,8 @@ public class App {
     public static void main(String[] args) {
         // TODO Auto-generated method stub
 
+
+   	
         init();
 
         connectExchanges();
