@@ -45,7 +45,7 @@ public class App {
     public static Map<String,List<CurrencyPair>> pairPerExchange = null;
     public static Map<String,Map<CurrencyPair,Ticker>> all_tickers = null;
     public static List<PotentialPair> ppair_list =  null;
-    public static Map<String,List<CurrencyPair>> all_eth_symbols = null;
+    public static Map<String,List<CurrencyPair>> all_counter_symbols = null;
     public static Map<String,List<CurrencyPair>> all_filters =  null;
     
     
@@ -55,8 +55,9 @@ public class App {
 
 	public static long last_trade_delay =  180000;  // 3 minutes
     public static double potential_delta_profit_procent  =  0.15;
-    public static double dollar_ammount  = 0.0157;  // in BTC aprox 100 $
-    public static Currency counter = Currency.ETH;
+    public static double dollar_ammount  = 0.004;  // in BTC aprox 100 $
+    public static Currency counter = Currency.BTC;
+    public static double contingent_procent = 0.01;  // how much procent should be add to the price to be bought or sold
     public static void connectDB()
     {
         try {
@@ -143,7 +144,7 @@ public class App {
 
         all_tickers = new  HashMap<String,Map<CurrencyPair,Ticker>>();
 
-        all_eth_symbols = new HashMap<String,List<CurrencyPair>>();
+        all_counter_symbols = new HashMap<String,List<CurrencyPair>>();
 
         all_filters = new HashMap<String,List<CurrencyPair>>();
         
@@ -225,7 +226,7 @@ public class App {
                     }
             	}
             }
-            all_eth_symbols.put(key, eth_symbols);
+            all_counter_symbols.put(key, eth_symbols);
         }
         for ( String key: exchangesNames )
         {
@@ -234,9 +235,9 @@ public class App {
                 if ( key != key2 )
                 {
                     List<CurrencyPair> common_symbols = new Vector<CurrencyPair>();
-                    for ( CurrencyPair elem: all_eth_symbols.get(key) )
+                    for ( CurrencyPair elem: all_counter_symbols.get(key) )
                     {
-                        for ( CurrencyPair elem2: all_eth_symbols.get(key2) )
+                        for ( CurrencyPair elem2: all_counter_symbols.get(key2) )
                         {
                             if ( elem.compareTo(elem2) == 0 )
                             {
@@ -430,7 +431,6 @@ public class App {
                                 //simulate for 100 base units
                                 double delta_profit = 0;
                                 double delta_profit_procent = 0;
-                                double contingent_procent = 0;
                                 double buy_withdraw_fee = ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee().doubleValue();
                                 double sell_withdraw_fee = ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee().doubleValue();
                                 double buy_fee = ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
@@ -455,15 +455,22 @@ public class App {
                                 double simulation_ammount = 0;
                                 try 
                                 {
-                                	if ( ! cp.base.toString().equals("BTC") )
+                                	if (  cp.counter.toString().equals("BTC"))
                                 	{
-//                                    	System.out.println("Trying to get ticker for "+dolar_pair.toString()+" at "+lowest_buy_exchange);
-                                    	base_dollar = exchanges.get(lowest_buy_exchange).getMarketDataService().getTicker(dolar_pair);
-                                    	simulation_ammount = dollar_ammount / base_dollar.getLast().doubleValue();                                	
+                                    	if ( ! cp.base.toString().equals("BTC") )
+                                    	{
+//                                        	System.out.println("Trying to get ticker for "+dolar_pair.toString()+" at "+lowest_buy_exchange);
+                                        	base_dollar = exchanges.get(lowest_buy_exchange).getMarketDataService().getTicker(dolar_pair);
+                                        	simulation_ammount = dollar_ammount / base_dollar.getLast().doubleValue();                                	
+                                    	}
+                                    	else
+                                    	{
+                                        	simulation_ammount = dollar_ammount;
+                                    	}
                                 	}
                                 	else
                                 	{
-                                    	simulation_ammount = dollar_ammount;
+                                		simulation_ammount = dollar_ammount;
                                 	}
                                 } catch ( Exception e)
                                 {
@@ -475,37 +482,37 @@ public class App {
                                 
                                 
                                 double buy_ammount = simulation_ammount;
-                                double buy_eth_cost = buy_ammount * buy_price;
+                                double buy_counter_cost = buy_ammount * buy_price;
                                 double bought_ammount = buy_ammount - (buy_ammount*(buy_fee/100));
                                 
                                 double sell_ammount = bought_ammount - buy_withdraw_fee;
-                                double sell_eth_result = sell_ammount * sell_price;
-                                sell_eth_result = sell_eth_result - (sell_eth_result*(sell_fee/100));
-                                double swapped_eth = sell_eth_result - sell_withdraw_fee;
-                                double to_be_swapped_eth = swapped_eth - ((swapped_eth - buy_eth_cost) /2);
+                                double sell_counter_result = sell_ammount * sell_price;
+                                sell_counter_result = sell_counter_result - (sell_counter_result*(sell_fee/100));
+                                double swapped_counter = sell_counter_result - sell_withdraw_fee;
+                                double to_be_swapped_counter = swapped_counter - ((swapped_counter - buy_counter_cost) /2);
                                 
-                                if ( swapped_eth < buy_eth_cost)
+                                if ( swapped_counter < buy_counter_cost)
                                 {
                                 	// negative profit
-                                	delta_profit = buy_eth_cost - swapped_eth;
-                                	delta_profit_procent = ( delta_profit * 100) / buy_eth_cost;
+                                	delta_profit = buy_counter_cost - swapped_counter;
+                                	delta_profit_procent = ( delta_profit * 100) / buy_counter_cost;
                                 	delta_profit_procent *= -1;
                                 	delta_profit *= -1;
                                 }
                                 else
                                 {
                                   	// positive profit
-                                	delta_profit = swapped_eth - buy_eth_cost;
-                                	delta_profit_procent = ( delta_profit * 100) / buy_eth_cost;
+                                	delta_profit = swapped_counter - buy_counter_cost;
+                                	delta_profit_procent = ( delta_profit * 100) / buy_counter_cost;
                                 }
                                 
                                 
                                 ppair.SetMisc(" ");
 //                                System.out.print(cp.toString()+" buy "+lowest_buy_exchange+" ");
 //                                System.out.print("buy ammount "+buy_ammount+" "+cp.base.toString()+" bought  ammount "+bought_ammount+" "+cp.base.toString()+" ");
-//                                System.out.print(" buy eth cost "+buy_eth_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" ");
-//                                System.out.print(" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_eth_result+" "+cp.counter.toString()+" ");
-//                                System.out.print("swapped eth "+swapped_eth+" to be swapped "+to_be_swapped_eth+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" ");
+//                                System.out.print(" buy counter cost "+buy_counter_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" ");
+//                                System.out.print(" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_counter_result+" "+cp.counter.toString()+" ");
+//                                System.out.print("swapped counter "+swapped_counter+" to be swapped "+to_be_swapped_counter+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" ");
 //                                System.out.println(" delta profit procent "+delta_profit_procent+" %");
 //
 
@@ -517,13 +524,13 @@ public class App {
                                 	Date last_sell_tstmp = null;
                                 	System.out.println(cp.toString()+ " ############### positive profit "+delta_profit_procent+" %");
                                 	ppair.SetBuyReq(lowest_buy_exchange,new BigDecimal(buy_price) ,new BigDecimal(buy_ammount),new BigDecimal(bought_ammount));
-                                	ppair.SetSellReq(highest_sell_exchange,new BigDecimal(sell_price) ,new BigDecimal(sell_ammount),new BigDecimal(to_be_swapped_eth));
+                                	ppair.SetSellReq(highest_sell_exchange,new BigDecimal(sell_price) ,new BigDecimal(sell_ammount),new BigDecimal(to_be_swapped_counter));
                                 	
                                     ppair.SetMisc(cp.toString()+" buy "+lowest_buy_exchange+" "+
                                     		"buy ammount "+buy_ammount+" "+cp.base.toString()+" bought  ammount "+bought_ammount+" "+cp.base.toString()+" "+
-                                    		" buy eth cost "+buy_eth_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" "+
-                                    		" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_eth_result+" "+cp.counter.toString()+" "+
-                                    		"swapped eth "+swapped_eth+" to be swapped "+to_be_swapped_eth+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" "+
+                                    		" buy counter cost "+buy_counter_cost+" "+cp.counter.toString()+" sell "+highest_sell_exchange+" "+
+                                    		" sell_ammount "+sell_ammount+" "+cp.base.toString()+" sell eth result "+sell_counter_result+" "+cp.counter.toString()+" "+
+                                    		"swapped counter "+swapped_counter+" to be swapped "+to_be_swapped_counter+" "+cp.counter.toString()+" delta_profit "+delta_profit+" "+cp.counter.toString()+" "+
                                     		" delta profit procent "+delta_profit_procent+" %"
                                     		);
 
@@ -657,7 +664,7 @@ public class App {
             getMaxPotentialPair();
 
             try {
-                Thread.sleep(10000);
+                Thread.sleep(30000);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
