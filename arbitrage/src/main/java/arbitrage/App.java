@@ -53,6 +53,10 @@ public class App {
     public static String positive_pairs = "positive_pairs";
     
 
+	public static long last_trade_delay =  180000;  // 3 minutes
+    public static double potential_delta_profit_procent  =  0.15;
+    public static double dollar_ammount  = 0.0157;  // in BTC aprox 100 $
+    public static Currency counter = Currency.ETH;
     public static void connectDB()
     {
         try {
@@ -76,6 +80,11 @@ public class App {
             cols += " sell_price DOUBLE ";
             cols += ",";
             cols += " delta_procent DOUBLE ";
+            cols += ",";            
+            cols += " last_buy_tstmp TIMESTAMP ";
+            cols += ",";            
+            cols += " last_sell_tstmp TIMESTAMP ";
+            
             
             query +=  "create table if not exists "+positive_pairs+" ( "+cols +" );";
             
@@ -209,7 +218,7 @@ public class App {
             	
 //            	if ( isWhite == true)  
             	{
-                    if ( (cp.counter == Currency.ETH) /*|| (cp.base == Currency.ETH)*/ )
+                    if ( (cp.counter == counter) /*|| (cp.base == Currency.ETH)*/ )
                     {
 
                         eth_symbols.add(cp);
@@ -439,7 +448,7 @@ public class App {
                                 double sell_price = highest_sell.getAsk().doubleValue();
                                 sell_price = sell_price - ((contingent_procent/100)*sell_price);
                                 
-                                double dollar_ammount  = 5.00469;  // in BTC aprox 30 $
+
                                 CurrencyPair dolar_pair = new CurrencyPair(cp.base,Currency.BTC);
 //                                System.out.println(dolar_pair.toString());
                                 Ticker base_dollar = null;
@@ -501,9 +510,11 @@ public class App {
 //
 
 
-                                if ( delta_profit > 0)
+                                if ( delta_profit_procent > potential_delta_profit_procent)
                                 {
                                 	///
+                                	Date last_buy_tstmp = null;
+                                	Date last_sell_tstmp = null;
                                 	System.out.println(cp.toString()+ " ############### positive profit "+delta_profit_procent+" %");
                                 	ppair.SetBuyReq(lowest_buy_exchange,new BigDecimal(buy_price) ,new BigDecimal(buy_ammount),new BigDecimal(bought_ammount));
                                 	ppair.SetSellReq(highest_sell_exchange,new BigDecimal(sell_price) ,new BigDecimal(sell_ammount),new BigDecimal(to_be_swapped_eth));
@@ -518,7 +529,7 @@ public class App {
 
                                     ppair.SetDeltaProcent(delta_profit_procent);                                            	
                                 	
-                                	long last_trade_delay =  180000;
+
                                     // check that the last trade was not so long ago on any exchange
                                 	try {
         								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp);
@@ -534,6 +545,7 @@ public class App {
         									continue;
         								}
         								Date tstmp = tr.getTimestamp();
+        								last_buy_tstmp = tstmp;
         								Date now = new Date();
         								
         								// if the last trade was to long ago..more than  seconds jump over this pair
@@ -564,6 +576,7 @@ public class App {
         									continue;
         								}
         								Date tstmp = tr.getTimestamp();
+        								last_sell_tstmp = tstmp;
         								Date now = new Date();
         								
         								// if the last trade was to long ago..more than  seconds jump over this pair
@@ -573,6 +586,8 @@ public class App {
         									System.out.println("Last trade was long time ago "+highest_sell_exchange+" "+( now.getTime() - tstmp.getTime() ));
         									continue;
         								}
+        								
+        								ppair.SetLastTradeTstmp(last_buy_tstmp, last_sell_tstmp);
         							} catch (IOException e1) {
         								// TODO Auto-generated catch block
         								e1.printStackTrace();

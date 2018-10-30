@@ -1,7 +1,11 @@
 package arbitrage;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +38,9 @@ public class PotentialPair {
 	BigDecimal sell_ammount;
 	BigDecimal swap_sell_ammount;
 	
+	Date buy_last_trade_tstmp;
+	Date sell_last_trade_tstmp;
+	
 	String misc;
 	
 	public PotentialPair()
@@ -41,6 +48,13 @@ public class PotentialPair {
 		buy_ticker = new HashMap<String,Ticker>();
 		sell_ticker = new HashMap<String,Ticker>();
 		delta_procent = 0 ;
+	}
+	
+	
+	public void SetLastTradeTstmp( Date buy_tstmp, Date sell_tstmp)
+	{
+		buy_last_trade_tstmp = buy_tstmp;
+		sell_last_trade_tstmp = sell_tstmp;
 	}
 	
 	public void SetBuyReq(String exchange,BigDecimal price,BigDecimal ammount,BigDecimal swap_ammount)
@@ -189,6 +203,8 @@ public class PotentialPair {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		String query="";
 		String cols="";
+		Timestamp buy_tstmp = new Timestamp(buy_last_trade_tstmp.getTime());
+		Timestamp sell_tstmp = new Timestamp(sell_last_trade_tstmp.getTime());
 		
 		cols += "'"+timestamp.toString()+"'";
 		cols += ",";
@@ -203,7 +219,10 @@ public class PotentialPair {
 		cols += BigDecimal.valueOf(ppair.sell_price.doubleValue());
 		cols += ",";
 		cols += BigDecimal.valueOf(ppair.delta_procent);		
-		
+		cols += ",";
+		cols += "'"+buy_tstmp.toString()+"'";		
+		cols += ",";
+		cols += "'"+sell_tstmp.toString()+"'";		
 		
 		
 		query = "insert into "+table+" values ("+cols+")";
@@ -227,7 +246,7 @@ public class PotentialPair {
 				   +delta_procent+" % "+" buy fee "+trade_fee_buy.doubleValue()+" sell fee "+trade_fee_sell.doubleValue()+" min trade ammount buy "+min_trade_ammount_buy.doubleValue()+
 				   " min trade ammount sell "+min_trade_ammount_sell.doubleValue()+" withdraw fee buy "+withdraw_fee_buy.doubleValue()+" - withdraw fee sell "+withdraw_fee_sell.doubleValue()+"\n"+misc+" \n"+
 				   " BUY "+ buy_exchange+" "+buy_price.doubleValue()+" "+buy_ammount.doubleValue()+" "+swap_buy_ammount.doubleValue()+" --- "+
-				   " SELL "+ sell_exchange+" "+sell_price.doubleValue()+" "+sell_ammount.doubleValue()+" "+swap_sell_ammount.doubleValue();
+				   " SELL "+ sell_exchange+" "+sell_price.doubleValue()+" "+sell_ammount.doubleValue()+" "+swap_sell_ammount.doubleValue()+" last buy trade "+buy_last_trade_tstmp+" last sell trade "+sell_last_trade_tstmp;
 	}
 
 }
