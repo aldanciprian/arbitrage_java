@@ -224,7 +224,7 @@ public class PotentialPair {
 	public String toString() {
 		return cp.toString()+"  BUY  "+GetBuyExchange()+"  "+
 					GetBuyTicker().getBid().toString()+"  SELL  "+GetSellExchange()+"  "+GetSellTicker().getAsk().toString()+"  - "
-				   +delta_procent+" % "+" buy fee "+trade_fee_buy.doubleValue()+" sell fee "+trade_fee_sell.doubleValue()+" min trade ammount buy"+min_trade_ammount_buy.doubleValue()+
+				   +delta_procent+" % "+" buy fee "+trade_fee_buy.doubleValue()+" sell fee "+trade_fee_sell.doubleValue()+" min trade ammount buy "+min_trade_ammount_buy.doubleValue()+
 				   " min trade ammount sell "+min_trade_ammount_sell.doubleValue()+" withdraw fee buy "+withdraw_fee_buy.doubleValue()+" - withdraw fee sell "+withdraw_fee_sell.doubleValue()+"\n"+misc+" \n"+
 				   " BUY "+ buy_exchange+" "+buy_price.doubleValue()+" "+buy_ammount.doubleValue()+" "+swap_buy_ammount.doubleValue()+" --- "+
 				   " SELL "+ sell_exchange+" "+sell_price.doubleValue()+" "+sell_ammount.doubleValue()+" "+swap_sell_ammount.doubleValue();

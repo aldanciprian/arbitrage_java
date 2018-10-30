@@ -398,70 +398,6 @@ public class App {
 
                         if ( lowest_buy_exchange != highest_sell_exchange)
                         {
-                            
-                            // check that the last trade was not so long ago on any exchange
-                        	try {
-								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp);
-//								System.out.println(t.toString());
-								Iterator<Trade> itr  = t.getTrades().iterator();
-								Trade tr = null;
-								while  (  itr.hasNext() )
-								{
-									tr=itr.next();
-								}
-								if ( tr == null )
-								{
-									continue;
-								}
-								Date tstmp = tr.getTimestamp();
-								Date now = new Date();
-								
-								// if the last trade was to long ago..more than 120 seconds jump over this pair
-								if ( ( now.getTime() - tstmp.getTime() ) > 120000)
-								{
-									System.out.println(tr);
-									System.out.println(now.toString()+" "+tstmp.toString()+" "+tstmp.getTime());
-									System.out.println("Last trade was long time ago "+lowest_buy_exchange+" "+( now.getTime() - tstmp.getTime() ));
-									continue;
-								}
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-                        	
-                            
-                        	try {
-								Trades  t = exchanges.get(highest_sell_exchange).getMarketDataService().getTrades(cp, 10);
-//								System.out.println(t.toString());
-								Iterator<Trade> itr  = t.getTrades().iterator();
-								Trade tr = null;
-								while  (  itr.hasNext() )
-								{
-									tr=itr.next();
-								}
-								if ( tr == null )
-								{
-									continue;
-								}
-								Date tstmp = tr.getTimestamp();
-								Date now = new Date();
-								
-								// if the last trade was to long ago..more than 120 seconds jump over this pair
-								if ( ( now.getTime() - tstmp.getTime() ) > 120000)
-								{
-									System.out.println(tr);
-									System.out.println("Last trade was long time ago "+highest_sell_exchange+" "+( now.getTime() - tstmp.getTime() ));
-									continue;
-								}
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-                        	
-                        	
-                        	
-                        	
-                        	
                             try
                             {
                                 ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
@@ -503,12 +439,32 @@ public class App {
                                 double sell_price = highest_sell.getAsk().doubleValue();
                                 sell_price = sell_price - ((contingent_procent/100)*sell_price);
                                 
-                                double dollar_ammount  = 0.00469;  // aprox 30 $
+                                double dollar_ammount  = 5.00469;  // in BTC aprox 30 $
                                 CurrencyPair dolar_pair = new CurrencyPair(cp.base,Currency.BTC);
 //                                System.out.println(dolar_pair.toString());
-                                Ticker base_dollar = exchanges.get(lowest_buy_exchange).getMarketDataService().getTicker(dolar_pair);
+                                Ticker base_dollar = null;
+                                double simulation_ammount = 0;
+                                try 
+                                {
+                                	if ( ! cp.base.toString().equals("BTC") )
+                                	{
+//                                    	System.out.println("Trying to get ticker for "+dolar_pair.toString()+" at "+lowest_buy_exchange);
+                                    	base_dollar = exchanges.get(lowest_buy_exchange).getMarketDataService().getTicker(dolar_pair);
+                                    	simulation_ammount = dollar_ammount / base_dollar.getLast().doubleValue();                                	
+                                	}
+                                	else
+                                	{
+                                    	simulation_ammount = dollar_ammount;
+                                	}
+                                } catch ( Exception e)
+                                {
+                                	e.printStackTrace();
+                                	System.out.println("Not a good pair "+dolar_pair);
+                                	simulation_ammount = dollar_ammount;
+                                }
                                 
-                                double simulation_ammount = dollar_ammount / base_dollar.getLast().doubleValue();
+                                
+                                
                                 double buy_ammount = simulation_ammount;
                                 double buy_eth_cost = buy_ammount * buy_price;
                                 double bought_ammount = buy_ammount - (buy_ammount*(buy_fee/100));
@@ -560,8 +516,68 @@ public class App {
                                     		" delta profit procent "+delta_profit_procent+" %"
                                     		);
 
-                                    ppair.SetDeltaProcent(delta_profit_procent);                                    
+                                    ppair.SetDeltaProcent(delta_profit_procent);                                            	
+                                	
+                                	long last_trade_delay =  180000;
+                                    // check that the last trade was not so long ago on any exchange
+                                	try {
+        								Trades  t = exchanges.get(lowest_buy_exchange).getMarketDataService().getTrades(cp);
+//        								System.out.println(t.toString());
+        								Iterator<Trade> itr  = t.getTrades().iterator();
+        								Trade tr = null;
+        								while  (  itr.hasNext() )
+        								{
+        									tr=itr.next();
+        								}
+        								if ( tr == null )
+        								{
+        									continue;
+        								}
+        								Date tstmp = tr.getTimestamp();
+        								Date now = new Date();
+        								
+        								// if the last trade was to long ago..more than  seconds jump over this pair
+        								if ( ( now.getTime() - tstmp.getTime() ) > last_trade_delay)
+        								{
+        									System.out.println(tr);
+        									System.out.println(now.toString()+" "+tstmp.toString()+" "+tstmp.getTime());
+        									System.out.println("Last trade was long time ago "+lowest_buy_exchange+" "+( now.getTime() - tstmp.getTime() ));
+        									continue;
+        								}
+        							} catch (IOException e1) {
+        								// TODO Auto-generated catch block
+        								e1.printStackTrace();
+        							}
+                                	
                                     
+                                	try {
+        								Trades  t = exchanges.get(highest_sell_exchange).getMarketDataService().getTrades(cp);
+//        								System.out.println(t.toString());
+        								Iterator<Trade> itr  = t.getTrades().iterator();
+        								Trade tr = null;
+        								while  (  itr.hasNext() )
+        								{
+        									tr=itr.next();
+        								}
+        								if ( tr == null )
+        								{
+        									continue;
+        								}
+        								Date tstmp = tr.getTimestamp();
+        								Date now = new Date();
+        								
+        								// if the last trade was to long ago..more than  seconds jump over this pair
+        								if ( ( now.getTime() - tstmp.getTime() ) > last_trade_delay)
+        								{
+        									System.out.println(tr);
+        									System.out.println("Last trade was long time ago "+highest_sell_exchange+" "+( now.getTime() - tstmp.getTime() ));
+        									continue;
+        								}
+        							} catch (IOException e1) {
+        								// TODO Auto-generated catch block
+        								e1.printStackTrace();
+        							}
+                                	
                                     ppair_list.add(ppair);                                	
                                 }
                                 else
@@ -571,10 +587,7 @@ public class App {
                             } catch ( NullPointerException e)
                             {
                               //  e.printStackTrace();
-                            } catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+                            } 
                         }
                     }
                 } catch (NullPointerException e)
