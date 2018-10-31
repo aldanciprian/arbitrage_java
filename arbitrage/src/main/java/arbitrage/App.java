@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.sql.*;
 import java.util.Date;
 
@@ -75,6 +76,33 @@ public class App {
 	public static long loop_delay = 5000; // miliseconds of loop
 	public static boolean apply_filter = false;
 
+	
+    public static String getDurationBreakdown(long millis) {
+        if(millis < 0) {
+            throw new IllegalArgumentException("Duration must be greater than zero!");
+        }
+
+        long days = TimeUnit.MILLISECONDS.toDays(millis);
+        millis -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(millis);
+        millis -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+        millis -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(days);
+        sb.append(" Days ");
+        sb.append(hours);
+        sb.append(" Hours ");
+        sb.append(minutes);
+        sb.append(" Minutes ");
+        sb.append(seconds);
+        sb.append(" Seconds");
+
+        return(sb.toString());
+    }	
+	
 	public static void insertState( STATE _state )
 	{
 		Statement stmt;
@@ -659,14 +687,14 @@ public class App {
 										Date tstmp = tr.getTimestamp();
 										last_buy_tstmp = tstmp;
 										Date now = new Date();
-
+										Long delta_time = now.getTime() - tstmp.getTime(); 
 										// if the last trade was to long ago..more than seconds jump over this pair
-										if ((now.getTime() - tstmp.getTime()) > last_trade_delay) {
+										if ( delta_time > last_trade_delay) {
 											System.out.println(tr);
 											System.out.println(
 													now.toString() + " " + tstmp.toString() + " " + tstmp.getTime());
 											System.out.println("Last trade was long time ago " + lowest_buy_exchange
-													+ " " + (now.getTime() - tstmp.getTime()));
+													+ " " + getDurationBreakdown(delta_time) );
 											continue;
 										}
 									} catch (IOException e1) {
@@ -692,12 +720,13 @@ public class App {
 										Date tstmp = tr.getTimestamp();
 										last_sell_tstmp = tstmp;
 										Date now = new Date();
+										Long delta_time = now.getTime() - tstmp.getTime(); 
 
 										// if the last trade was to long ago..more than seconds jump over this pair
-										if ((now.getTime() - tstmp.getTime()) > last_trade_delay) {
+										if (delta_time > last_trade_delay) {
 											System.out.println(tr);
 											System.out.println("Last trade was long time ago " + highest_sell_exchange
-													+ " " + (now.getTime() - tstmp.getTime()));
+													+ " " + getDurationBreakdown(delta_time));
 											continue;
 										}
 
