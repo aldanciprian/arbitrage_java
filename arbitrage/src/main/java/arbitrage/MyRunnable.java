@@ -25,6 +25,7 @@ public class MyRunnable implements Runnable {
         // TODO Auto-generated method stub
         MarketDataService marketDataService = App.exchanges.get(exchange_name).getMarketDataService();
         Params pairs = new TickersParams(App.pairPerExchange.get(exchange_name));
+
 //		System.out.println(pairs.getClass().toString());
         Map<CurrencyPair, Ticker> exchange_tickers = new HashMap<CurrencyPair, Ticker>();
 
