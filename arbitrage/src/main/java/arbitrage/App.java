@@ -773,24 +773,20 @@ public class App {
 				generatePotentialPairs();
 
 				transact_ppair = getMaxPotentialPair();
-				changeState(STATE.REQ_EXECUTE_TRANSACTION);
+				
+				if (transact_ppair == null) 
+				{
+					try {
+						Thread.sleep(loop_delay);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					// request execute transaction
+					changeState(STATE.REQ_EXECUTE_TRANSACTION);
+				}
 				break;
-			// if ( transact_ppair == null )
-			// {
-			// try {
-			// Thread.sleep(loop_delay);
-			// } catch (InterruptedException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-			// }
-			// }
-			// else
-			// {
-			// // request execute transaction
-			// changeState(STATE.REQ_EXECUTE_TRANSACTION);
-			// }
-
-			// break;
 			case REQ_EXECUTE_TRANSACTION:
 				// req_execute_transaction();
 				changeState(STATE.PENDING_EXECUTED_TRANSACTION);
@@ -818,7 +814,7 @@ public class App {
 			}
 
 			try {
-				Thread.sleep(500);
+				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
