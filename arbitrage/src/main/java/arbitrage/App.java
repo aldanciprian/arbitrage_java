@@ -54,10 +54,12 @@ public class App {
     
 
 	public static long last_trade_delay =  180000;  // 3 minutes
-    public static double potential_delta_profit_procent  =  0.15;
-    public static double dollar_ammount  = 0.004;  // in BTC aprox 100 $
+    public static double potential_delta_profit_procent  =  2.15;
+    public static double dollar_ammount  = 0.032;  // in BTC aprox 100 $
     public static Currency counter = Currency.BTC;
     public static double contingent_procent = 0.01;  // how much procent should be add to the price to be bought or sold
+    public static long loop_delay = 10000;  // miliseconds of loop
+  
     public static void connectDB()
     {
         try {
@@ -160,6 +162,11 @@ public class App {
             while ((strLine = br.readLine()) != null)   {
               // Print the content on the console
 //              System.out.println (strLine);
+              if ( strLine.contains("#"))
+              {
+            	  // jump over comment lines
+            	  continue;
+              }
               if ( strLine.contains("="))
               {
                   String[] parts = strLine.split("=");
@@ -217,7 +224,7 @@ public class App {
             		}
             	}
             	
-//            	if ( isWhite == true)  
+            	if ( isWhite == true)  
             	{
                     if ( (cp.counter == counter) /*|| (cp.base == Currency.ETH)*/ )
                     {
@@ -428,7 +435,7 @@ public class App {
                                 ppair.SetTradeFeeSell(ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee());
                                 ppair.SetWithdrawSellFee(ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee());
 
-                                //simulate for 100 base units
+
                                 double delta_profit = 0;
                                 double delta_profit_procent = 0;
                                 double buy_withdraw_fee = ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee().doubleValue();
@@ -604,7 +611,7 @@ public class App {
                                 }
                                 else
                                 {
-                                	System.out.println(cp.toString()+ " ############### negative profit "+delta_profit_procent+" %");
+                                	System.out.println(cp.toString()+ " ############### negative profit "+delta_profit_procent+" %  "+key);
                                 }
                             } catch ( NullPointerException e)
                             {
@@ -664,7 +671,7 @@ public class App {
             getMaxPotentialPair();
 
             try {
-                Thread.sleep(30000);
+                Thread.sleep(loop_delay);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

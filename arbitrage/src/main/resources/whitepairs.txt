@@ -1,7 +1,24 @@
-bitfinex=GNT/ETH
-bitfinex=KNC/ETH
+bitfinex=XRP/BTC
+bitfinex=LTC/BTC
+bitfinex=ETH/BTC
+bitfinex=XMR/BTC
+bitfinex=BCH/BTC
+bitfinex=NEO/BTC
+bitfinex=EOS/BTC
 
-poloniex=GNT/ETH
-poloniex=KNC/ETH
+poloniex=XRP/BTC
+poloniex=LTC/BTC
+poloniex=ETH/BTC
+poloniex=XMR/BTC
+poloniex=BCH/BTC
+poloniex=NEO/BTC
+poloniex=EOS/BTC
 
-binance=KNC/ETH
+
+binance=XRP/BTC
+binance=LTC/BTC
+binance=ETH/BTC
+binance=XMR/BTC
+binance=BCH/BTC
+binance=NEO/BTC
+binance=EOS/BTC
