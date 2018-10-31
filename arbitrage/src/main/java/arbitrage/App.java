@@ -25,6 +25,8 @@ import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.marketdata.Trades;
+import org.knowm.xchange.dto.meta.CurrencyMetaData;
+import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
 
 import org.slf4j.Logger;
@@ -47,15 +49,21 @@ public class App {
     public static List<PotentialPair> ppair_list =  null;
     public static Map<String,List<CurrencyPair>> all_counter_symbols = null;
     public static Map<String,List<CurrencyPair>> all_filters =  null;
-    
+    public static Map<String,Map<Currency,CurrencyMetaData>> all_currency_metadata =  null;
+    public static Map<String,Map<CurrencyPair,CurrencyPairMetaData>> all_currencypair_metadata =  null;
     
     public static Connection conn = null;
     public static String positive_pairs = "positive_pairs";
     
-
+    
+    
+    
+    public static long get_exchange_meta_timer_max =  5;  // the number of loops to get exchange meta
+    public static long get_exchange_meta_timer =  get_exchange_meta_timer_max;  // the number of loops to get exchange meta
+    
 	public static long last_trade_delay =  180000;  // 3 minutes
     public static double potential_delta_profit_procent  =  2.15;
-    public static double dollar_ammount  = 0.032;  // in BTC aprox 100 $
+    public static double dollar_ammount  = 0.016;  // in BTC aprox 100 $
     public static Currency counter = Currency.BTC;
     public static double contingent_procent = 0.01;  // how much procent should be add to the price to be bought or sold
     public static long loop_delay = 10000;  // miliseconds of loop
@@ -149,6 +157,9 @@ public class App {
         all_counter_symbols = new HashMap<String,List<CurrencyPair>>();
 
         all_filters = new HashMap<String,List<CurrencyPair>>();
+        
+        all_currency_metadata = new HashMap<String,Map<Currency,CurrencyMetaData>>();
+        all_currencypair_metadata = new HashMap<String,Map<CurrencyPair,CurrencyPairMetaData>>();
         
         // Open the file
         try 
@@ -352,6 +363,32 @@ public class App {
     {
         ppair_list.clear();
 
+        if ( get_exchange_meta_timer == get_exchange_meta_timer_max )
+        {
+        	// get meta
+        	all_currencypair_metadata.clear();
+        	all_currency_metadata.clear();
+        	
+        	
+        	for ( String key : exchangesNames)
+        	{
+                Map<Currency,CurrencyMetaData> exchange_currency_meta = null;
+                Map<CurrencyPair,CurrencyPairMetaData> exchange_currencyPair_meta = null;
+                
+                ExchangeMetaData key_meta = exchanges.get(key).getExchangeMetaData();
+ 
+                exchange_currency_meta =  key_meta.getCurrencies();
+                exchange_currencyPair_meta = key_meta.getCurrencyPairs();
+                all_currency_metadata.put(key, exchange_currency_meta);
+                all_currencypair_metadata.put(key, exchange_currencyPair_meta);
+            }
+        	get_exchange_meta_timer = 0;
+        }
+        else
+        {
+        	get_exchange_meta_timer++;
+        }
+        
         for (String key : tradable_pairs.keySet())
         {
             String[] exchanges_keys = key.split(":");
@@ -417,35 +454,32 @@ public class App {
                         {
                             try
                             {
-                                ExchangeMetaData ex_meta_buy = exchanges.get(lowest_buy_exchange).getExchangeMetaData();
-                                ExchangeMetaData ex_meta_sell = exchanges.get(highest_sell_exchange).getExchangeMetaData();
-
                                 PotentialPair ppair = new PotentialPair();
                                 ppair.SetBuyTicker(lowest_buy_exchange, lowest_buy);
                                 ppair.SetSellTicker(highest_sell_exchange, highest_sell);
 
                                 ppair.SetCurrencyPair(cp);
 
-                                ppair.SetMinTradeAmmountBuy(ex_meta_buy.getCurrencyPairs().get(cp).getMinimumAmount());
-                                ppair.SetTradeFeeBuy(ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee());
-                                ppair.SetWithdrawBuyFee(ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee());
+                                ppair.SetMinTradeAmmountBuy(all_currencypair_metadata.get(lowest_buy_exchange).get(cp).getMinimumAmount());
+                                ppair.SetTradeFeeBuy(all_currencypair_metadata.get(lowest_buy_exchange).get(cp).getTradingFee());
+                                ppair.SetWithdrawBuyFee(all_currency_metadata.get(lowest_buy_exchange).get(cp.base).getWithdrawalFee());
 
 
-                                ppair.SetMinTradeAmmountSell(ex_meta_sell.getCurrencyPairs().get(cp).getMinimumAmount());
-                                ppair.SetTradeFeeSell(ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee());
-                                ppair.SetWithdrawSellFee(ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee());
+                                ppair.SetMinTradeAmmountSell(all_currencypair_metadata.get(highest_sell_exchange).get(cp).getMinimumAmount());
+                                ppair.SetTradeFeeSell(all_currencypair_metadata.get(highest_sell_exchange).get(cp).getTradingFee());
+                                ppair.SetWithdrawSellFee(all_currency_metadata.get(highest_sell_exchange).get(cp.counter).getWithdrawalFee());
 
 
                                 double delta_profit = 0;
                                 double delta_profit_procent = 0;
-                                double buy_withdraw_fee = ex_meta_buy.getCurrencies().get(cp.base).getWithdrawalFee().doubleValue();
-                                double sell_withdraw_fee = ex_meta_sell.getCurrencies().get(cp.counter).getWithdrawalFee().doubleValue();
-                                double buy_fee = ex_meta_buy.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
+                                double buy_withdraw_fee = all_currency_metadata.get(lowest_buy_exchange).get(cp.base).getWithdrawalFee().doubleValue();
+                                double sell_withdraw_fee =all_currency_metadata.get(highest_sell_exchange).get(cp.counter).getWithdrawalFee().doubleValue();
+                                double buy_fee = all_currencypair_metadata.get(lowest_buy_exchange).get(cp).getTradingFee().doubleValue();
                                 if ( lowest_buy_exchange.equals("poloniex"))
                                 {
                                 	buy_fee = buy_fee * 100;
                                 }
-                                double sell_fee = ex_meta_sell.getCurrencyPairs().get(cp).getTradingFee().doubleValue();
+                                double sell_fee = all_currencypair_metadata.get(highest_sell_exchange).get(cp).getTradingFee().doubleValue();
                                 if ( highest_sell_exchange.equals("poloniex"))
                                 {
                                 	sell_fee = sell_fee * 100;
