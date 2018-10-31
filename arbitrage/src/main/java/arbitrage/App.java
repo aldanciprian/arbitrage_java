@@ -75,6 +75,34 @@ public class App {
 	public static long loop_delay = 5000; // miliseconds of loop
 	public static boolean apply_filter = false;
 
+	public static void insertState( STATE _state )
+	{
+		Statement stmt;
+		Timestamp tstmp = new Timestamp(System.currentTimeMillis());
+		String query = "";
+		String cols ="";
+		
+		try {
+			stmt = conn.createStatement();
+			cols += "'"+tstmp.toString()+"'";
+			cols += ",";
+			cols += "'"+_state.toString()+"'";
+			query = "insert into " + state_table + "(tstmp,state) values ("+cols+")";
+			System.out.println(query);
+			
+			stmt.execute(query);
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+	public static void changeState(STATE _state)
+	{
+		state = _state;
+		insertState(_state);
+	}
 	public static STATE getStateMachine() {
 		int id;
 		String temp_state = "";
@@ -89,11 +117,11 @@ public class App {
 			// iterate through the java resultset
 			while (rs.next()) {
 				id = rs.getInt("id");
-				temp_state = rs.getString("temp_state");
+				temp_state = rs.getString("state");
 				tstmp = rs.getTimestamp("tstmp");
 
 				// print the results
-				System.out.format("%s, %s, %s \n", id, temp_state, tstmp.toString());
+				System.out.format("%s, %s, %s \n", tstmp.toString(),temp_state,id);
 			}
 			stmt.close();
 		} catch (SQLException e) {
@@ -158,7 +186,7 @@ public class App {
 			cols += ",";
 			cols += " last_sell_tstmp TIMESTAMP ";
 
-			query += "create table if not exists " + positive_pairs + " ( " + cols + " );";
+			query += "create table if not exists " + positive_pairs + " ( " + cols + " )";
 
 			// System.out.println(query);
 
@@ -176,7 +204,7 @@ public class App {
 			cols += ",";
 			cols += " PRIMARY KEY (id) ";
 
-			query += "create table if not exists " + state_table + " ( " + cols + " );";
+			query += "create table if not exists " + state_table + " ( " + cols + " )";
 
 			System.out.println(query);
 
@@ -204,7 +232,7 @@ public class App {
 
 			cols += " FOREIGN KEY (id) REFERENCES " + state_table + "(id)";
 
-			query += "create table if not exists " + substate_transact + " ( " + cols + " );";
+			query += "create table if not exists " + substate_transact + " ( " + cols + " )";
 
 			System.out.println(query);
 
@@ -724,17 +752,19 @@ public class App {
 
 		connectDB();
 
+	
+		init();
+
+		connectExchanges();
+
+		setSymbols();		
+		
 		state = getStateMachine();
 		while (true) {
 			System.out.println("Where are in state " + state.toString());
 			switch (state) {
 			case INIT:
-				init();
-
-				connectExchanges();
-
-				setSymbols();
-				state = STATE.SEARCH_POTENTIAL;
+				changeState(STATE.SEARCH_POTENTIAL);
 				break;
 			case SEARCH_POTENTIAL:
 				transact_ppair = null;
@@ -743,7 +773,7 @@ public class App {
 				generatePotentialPairs();
 
 				transact_ppair = getMaxPotentialPair();
-				state = STATE.REQ_EXECUTE_TRANSACTION;
+				changeState(STATE.REQ_EXECUTE_TRANSACTION);
 				break;
 			// if ( transact_ppair == null )
 			// {
@@ -757,30 +787,30 @@ public class App {
 			// else
 			// {
 			// // request execute transaction
-			// state = STATE.REQ_EXECUTE_TRANSACTION;
+			// changeState(STATE.REQ_EXECUTE_TRANSACTION);
 			// }
 
 			// break;
 			case REQ_EXECUTE_TRANSACTION:
 				// req_execute_transaction();
-				state = STATE.PENDING_EXECUTED_TRANSACTION;
+				changeState(STATE.PENDING_EXECUTED_TRANSACTION);
 				break;
 			case PENDING_EXECUTED_TRANSACTION:
-				state = STATE.EXECUTED_TRANSACTION;
+				changeState(STATE.EXECUTED_TRANSACTION);
 				break;
 			case EXECUTED_TRANSACTION:
-				state = STATE.REQUEST_SWAP;
+				changeState(STATE.REQUEST_SWAP);
 				// req_execute_transaction();
 				break;
 			case REQUEST_SWAP:
-				state = STATE.PENDING_SWAP;
+				changeState(STATE.PENDING_SWAP);
 				// req_execute_transaction();
 				break;
 			case PENDING_SWAP:
-				state = STATE.EXECUTED_SWAP;
+				changeState(STATE.EXECUTED_SWAP);
 				break;
 			case EXECUTED_SWAP:
-				state = STATE.SEARCH_POTENTIAL;
+				changeState(STATE.SEARCH_POTENTIAL);
 				break;
 			default:
 				System.err.println("Unknown state " + state.toString());
