@@ -200,43 +200,49 @@ public class PotentialPair {
 	
 	public void InsertPotentialPair(Connection conn,String table,PotentialPair ppair)
 	{
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		String query="";
-		String cols="";
-		Timestamp buy_tstmp = new Timestamp(buy_last_trade_tstmp.getTime());
-		Timestamp sell_tstmp = new Timestamp(sell_last_trade_tstmp.getTime());
-		
-		cols += "'"+timestamp.toString()+"'";
-		cols += ",";
-		cols += "'"+ppair.cp.toString()+"'";
-		cols += ",";
-		cols += "'"+ppair.buy_exchange.toString()+"'";
-		cols += ",";
-		cols += BigDecimal.valueOf(ppair.buy_price.doubleValue());		
-		cols += ",";
-		cols += "'"+ppair.sell_exchange.toString()+"'";		
-		cols += ",";
-		cols += BigDecimal.valueOf(ppair.sell_price.doubleValue());
-		cols += ",";
-		cols += BigDecimal.valueOf(ppair.delta_procent);		
-		cols += ",";
-		cols += "'"+buy_tstmp.toString()+"'";		
-		cols += ",";
-		cols += "'"+sell_tstmp.toString()+"'";		
-		
-		
-		query = "insert into "+table+" values ("+cols+")";
-		System.out.println(query);
-		
-	      // Step 2: Allocate a 'Statement' object in the Connection
-        Statement stmt;
-		try {
-			stmt = conn.createStatement();
-	        stmt.execute(query);			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+		try 
+		{
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			String query="";
+			String cols="";
+			Timestamp buy_tstmp = new Timestamp(buy_last_trade_tstmp.getTime());
+			Timestamp sell_tstmp = new Timestamp(sell_last_trade_tstmp.getTime());
+			
+			cols += "'"+timestamp.toString()+"'";
+			cols += ",";
+			cols += "'"+ppair.cp.toString()+"'";
+			cols += ",";
+			cols += "'"+ppair.buy_exchange.toString()+"'";
+			cols += ",";
+			cols += BigDecimal.valueOf(ppair.buy_price.doubleValue());		
+			cols += ",";
+			cols += "'"+ppair.sell_exchange.toString()+"'";		
+			cols += ",";
+			cols += BigDecimal.valueOf(ppair.sell_price.doubleValue());
+			cols += ",";
+			cols += BigDecimal.valueOf(ppair.delta_procent);		
+			cols += ",";
+			cols += "'"+buy_tstmp.toString()+"'";		
+			cols += ",";
+			cols += "'"+sell_tstmp.toString()+"'";		
+			
+			
+			query = "insert into "+table+" values ("+cols+")";
+			System.out.println(query);
+			
+		      // Step 2: Allocate a 'Statement' object in the Connection
+	        Statement stmt;
+			try {
+				stmt = conn.createStatement();
+		        stmt.execute(query);			
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		} catch ( NullPointerException e)
+		{
 			e.printStackTrace();
-			System.exit(-1);
 		}
 	}
 	

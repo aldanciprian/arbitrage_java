@@ -68,12 +68,12 @@ public class App {
 	public static long get_exchange_meta_timer = get_exchange_meta_timer_max; // the number of loops to get exchange
 																				// meta
 
-	public static long last_trade_delay = 180000; // 3 minutes
+	public static long last_trade_delay = 60000; // 1 minute
 	public static double potential_delta_profit_procent = 0.15;
 	public static double dollar_ammount = 0.004; // in BTC aprox 50 $
 	public static Currency counter = Currency.BTC;
 	public static double contingent_procent = 0.01; // how much procent should be add to the price to be bought or sold
-	public static long loop_delay = 5000; // miliseconds of loop
+	public static long loop_delay = 10000; // miliseconds of loop
 	public static boolean apply_filter = false;
 
 	
