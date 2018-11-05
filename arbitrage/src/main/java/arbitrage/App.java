@@ -19,7 +19,8 @@ import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.binance.BinanceExchange;
-import org.knowm.xchange.bitfinex.v2.BitfinexExchange;
+//import org.knowm.xchange.bitfinex.v2.BitfinexExchange;
+import arbitrage.v3.BitfinexExchange;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.account.FundingRecord;
@@ -191,7 +192,7 @@ public class App {
 			// Step 1: Allocate a database 'Connection' object
 			String query = "";
 			String cols = "";
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/arbitrage", "ciprian", "ciprian");
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/arbitrage?autoReconnect=true", "ciprian", "ciprian");
 			// MySQL: "jdbc:mysql://hostname:port/databaseName", "username", "password"
 			// Step 2: Allocate a 'Statement' object in the Connection
 			Statement stmt = conn.createStatement();
