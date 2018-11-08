@@ -187,6 +187,17 @@ public class App {
 		return STATE.INIT;
 	}
 
+	public static void pingDB()
+	{
+		try {
+			Statement stmt = conn.createStatement();			
+			stmt.execute("show tables");
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public static void connectDB() {
 		try {
 			// Step 1: Allocate a database 'Connection' object
@@ -792,6 +803,7 @@ public class App {
 		state = getStateMachine();
 		while (true) {
 			System.out.println("Where are in state " + state.toString());
+			pingDB();			
 			switch (state) {
 			case INIT:
 				changeState(STATE.SEARCH_POTENTIAL);
